@@ -1,4 +1,3 @@
-// Currently unused
 class Player
 {
     level: 1;

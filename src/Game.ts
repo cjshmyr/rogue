@@ -10,13 +10,19 @@ class Game
 {
     gr: GameRenderer;
     p: Player;
+    w: World;
 
     constructor() {
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
         this.gr = new GameRenderer(canvas);
 
-        this.gr.demo();
+        this.p = new Player();
+        this.w = new World();
 
+        // Render things
+        this.gr.render(this.w);
+
+        // Events
         window.addEventListener('keydown', this.onKeyDown);
     }
 
@@ -24,8 +30,7 @@ class Game
     // Key input
     private onKeyDown = (event: KeyboardEvent) => {
         console.log('pressed: ' + event.keyCode);
-        //this.gr.helloWorld();
 
-        this.gr.addText(event.key, 100, 100);
+        this.gr.addText(event.key, 16, 200);
     }
 }
