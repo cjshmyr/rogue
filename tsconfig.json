@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "es3",
+        // "module": "commonjs",
+        "sourceMap": false,
+        "outFile": "./core/built/game.js"
+    }/*,
+    "files": [
+        "./pixi/pixi.js.d.ts",
+        "./pixi/pixi-filters.d.ts",
+        "./pixi/pixi.js-tests.ts",
+    ]*/
+}

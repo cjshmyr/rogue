@@ -1,0 +1,5 @@
+# mongoose is used for a local webserver
+mongoose*.exe
+
+# anything in built folder can be compiled with tsc
+core/built/
