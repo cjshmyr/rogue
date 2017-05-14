@@ -6,17 +6,20 @@ window.onload = () => {
 }
 
 class Game {
-    // Graphics
+    // World
     renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
     stage: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
     readonly worldStart: Point = new Point(16, 16);
     readonly worldSpriteSize: number = 16;
 
+    // HUD
+    readonly hudStart: Point = new Point(16, 500);
+    hudText: PIXI.Text;
+
     // Game
     actors: Actor[];
     hero: Hero;
-    debugText: PIXI.Text;
 
     constructor() {
         // Setup
@@ -40,7 +43,7 @@ class Game {
     private bindEvents() : void {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
             console.log('pressed: ' + event.keyCode);
-            this.setDebugText(event.key);
+            this.setHudText(event.key);
 
             let movement: Point;
 
@@ -73,16 +76,35 @@ class Game {
             if (a instanceof Wall) {
                 return; // Don't get them move
             }
-            else {
-                // Move our hero
-                this.hero.location = destination;
+        }
 
-                // Update render position
-                let pos = this.getActorWorldPosition(this.hero);
-                this.hero.sprite.x = pos.x;
-                this.hero.sprite.y = pos.y;
+        // Check if there's anything we can pick up by walking over it
+        for (let a of actorsAtPos) {
+            if (a instanceof Gold) {
+                // Pick it up!
+                this.stage.removeChild(a.sprite);
+
+                console.log('actor count before: ' + this.actors.length);
+
+                // Remove from global actors list
+                let index: number = this.actors.indexOf(a, 0);
+                if (index > -1) {
+                    this.actors.splice(index, 1);
+                }
+
+                console.log('actor count after: ' + this.actors.length);
+
+                // Give some gold
+                this.hero.gold += 5;
             }
         }
+
+        // Move our hero
+        this.hero.location = destination;
+        let pos = this.getActorWorldPosition(this.hero);
+        this.hero.sprite.x = pos.x;
+        this.hero.sprite.y = pos.y;
+
 
         console.log('actors at pos count: ' + actorsAtPos.length);
     }
@@ -102,16 +124,36 @@ class Game {
     private addTestMap() : void {
         // Sample map
         let map = [
-            "xxxxxxxxxx",
-            "xoooooooox",
-            "xoxooooxox",
-            "xoxooooxox",
-            "xoooooooox",
-            "xoxooooxox",
-            "xooxooxoox",
-            "xooxxxxoox",
-            "xoooooooox",
-            "xxxxxxxxxx"
+            "##############################",
+            "#               #        #   #",
+            "#               #        #   #",
+            "#               #            #",
+            "#      #        #            #",
+            "#      #        #            #",
+            "#      #        #        #   #",
+            "#      #        #        #   #",
+            "#      #        #    ###### ##",
+            "#      #                     #",
+            "#      #                     #",
+            "#      ##########         ####",
+            "#      ##########            #",
+            "#      ##########            #",
+            "#      ##########            #",
+            "#      ##########            #",
+            "#      ###############       #",
+            "#                            #",
+            "#                            #",
+            "#                            #",
+            "######### ########           #",
+            "######### ########           #",
+            "#         ########           #",
+            "# ################          ##",
+            "# ##############           ###",
+            "# #############           ####",
+            "#     ########          ######",
+            "##### ########        ########",
+            "#                    #########",
+            "##############################",
         ];
 
         this.actors = [];
@@ -124,11 +166,11 @@ class Game {
 
                 let a = <Actor> null;
 
-                if (tile == 'x') {
+                if (tile == '#') {
                     let sprite = new PIXI.Sprite(this.atlas['sprite172']);
                     a = new Wall(sprite, location);
                 }
-                else if (tile == 'o') {
+                else if (tile == ' ') {
                     let sprite = new PIXI.Sprite(this.atlas['sprite210']);
                     a = new Floor(sprite, location);
                 }
@@ -153,17 +195,26 @@ class Game {
         this.hero = new Hero(sprite, new Point(1, 1));
         this.actors.push(this.hero);
 
-        // And add them to the stage
         let pos = this.getActorWorldPosition(this.hero);
         this.hero.sprite.position.x = pos.x;
         this.hero.sprite.position.y = pos.y;
         this.stage.addChild(this.hero.sprite);
 
+        // Add something you can pick up
+        let goldSprite = new PIXI.Sprite(this.atlas['sprite250']);
+        let gold = new Gold(goldSprite, new Point(3, 1));
+        this.actors.push(gold);
+
+        let goldPos = this.getActorWorldPosition(gold);
+        gold.sprite.position.x = goldPos.x;
+        gold.sprite.position.y = goldPos.y;
+        this.stage.addChild(gold.sprite);
+
         // test: try adding some plain debug text.
-        this.debugText = new PIXI.Text('');
-        this.debugText.x = 16;
-        this.debugText.y = 200;
-        this.stage.addChild(this.debugText);
+        this.hudText = new PIXI.Text('');
+        this.hudText.x = this.hudStart.x;
+        this.hudText.y = this.hudStart.y;
+        this.stage.addChild(this.hudText);
     }
 
     private getActorWorldPosition(a: Actor) : Point {
@@ -173,8 +224,8 @@ class Game {
         );
     }
 
-    private setDebugText(text: string) : void {
-        this.debugText.text = text;
+    private setHudText(text: string) : void {
+        this.hudText.text = 'Pressed key ' + text;
     }
 
     private gameLoop = () => {

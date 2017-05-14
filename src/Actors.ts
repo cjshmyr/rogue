@@ -9,6 +9,8 @@ class Actor {
 }
 
 class Hero extends Actor {
+    gold: number;
+
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
     }
@@ -21,6 +23,12 @@ class Floor extends Actor {
 }
 
 class Wall extends Actor {
+    constructor(sprite: PIXI.Sprite, location: Point) {
+        super(sprite, location);
+    }
+}
+
+class Gold extends Actor {
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
     }
