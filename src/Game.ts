@@ -14,8 +14,11 @@ class Game {
     readonly worldSpriteSize: number = 16;
 
     // HUD
-    readonly hudStart: Point = new Point(16, 500);
-    hudText: PIXI.Text;
+    readonly bottomHudStart: Point = new Point(16, 500);
+    buttomHudText: PIXI.Text;
+    readonly rightHudStart: Point = new Point(500, 16);
+    rightHudText: PIXI.Text;
+    hudLastPressedKey: string;
 
     // Game
     actors: Actor[];
@@ -24,7 +27,10 @@ class Game {
     constructor() {
         // Setup
         this.setupRenderer();
-        this.bindEvents();
+        this.setupEvents();
+
+        // Game-related setup
+        this.setupHud();
 
         // Load a test map
         this.addTestMap();
@@ -35,15 +41,15 @@ class Game {
 
     private setupRenderer() : void {
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
-        this.renderer = PIXI.autoDetectRenderer(800, 600, { backgroundColor: 0x1099bb, view: canvas });
+        this.renderer = PIXI.autoDetectRenderer(800, 600, { backgroundColor: 0x606060, view: canvas });
         this.stage = new PIXI.Container();
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
     }
 
-    private bindEvents() : void {
+    private setupEvents() : void {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
             console.log('pressed: ' + event.keyCode);
-            this.setHudText(event.key);
+            this.hudLastPressedKey = event.key;
 
             let movement: Point;
 
@@ -66,17 +72,39 @@ class Game {
         });
     }
 
+    private setupHud() : void {
+        this.buttomHudText = new PIXI.Text('');
+        this.buttomHudText.style.fontSize = 12;
+        this.buttomHudText.style.fill = 0xFFFFFF;
+        this.buttomHudText.x = this.bottomHudStart.x;
+        this.buttomHudText.y = this.bottomHudStart.y;
+        this.stage.addChild(this.buttomHudText);
+
+        this.rightHudText = new PIXI.Text('');
+        this.rightHudText.style.fontSize = 12;
+        this.rightHudText.style.fill = 0xFFFFFF;
+        this.rightHudText.x = this.rightHudStart.x;
+        this.rightHudText.y = this.rightHudStart.y;
+        this.stage.addChild(this.rightHudText);
+    }
+
+    private drawHud() : void {
+        this.buttomHudText.text = 'Last key: ' + this.hudLastPressedKey;
+        this.rightHudText.text = 'Health: ' + this.hero.health + '\nGold:' + this.hero.gold;
+    }
+
     private moveHero(movement: Point) : void {
         let destination = Point.Add(this.hero.location, movement);
-
-        // Check if destination is blocked
         let actorsAtPos: Actor[] = this.actorsAtPosition(destination);
 
+        // Check if destination is blocked
         for (let a of actorsAtPos) {
             if (a instanceof Wall) {
                 return; // Don't get them move
             }
         }
+
+        // -- Player turn start --
 
         // Check if there's anything we can pick up by walking over it
         for (let a of actorsAtPos) {
@@ -84,7 +112,7 @@ class Game {
                 // Pick it up!
                 this.stage.removeChild(a.sprite);
 
-                console.log('actor count before: ' + this.actors.length);
+                // console.log('actor count before: ' + this.actors.length);
 
                 // Remove from global actors list
                 let index: number = this.actors.indexOf(a, 0);
@@ -92,10 +120,10 @@ class Game {
                     this.actors.splice(index, 1);
                 }
 
-                console.log('actor count after: ' + this.actors.length);
+                // console.log('actor count after: ' + this.actors.length);
 
                 // Give some gold
-                this.hero.gold += 5;
+                this.hero.gold += a.amount;
             }
         }
 
@@ -105,8 +133,7 @@ class Game {
         this.hero.sprite.x = pos.x;
         this.hero.sprite.y = pos.y;
 
-
-        console.log('actors at pos count: ' + actorsAtPos.length);
+        // console.log('actors at pos count: ' + actorsAtPos.length);
     }
 
     private actorsAtPosition(position: Point) : Actor[] {
@@ -209,12 +236,6 @@ class Game {
         gold.sprite.position.x = goldPos.x;
         gold.sprite.position.y = goldPos.y;
         this.stage.addChild(gold.sprite);
-
-        // test: try adding some plain debug text.
-        this.hudText = new PIXI.Text('');
-        this.hudText.x = this.hudStart.x;
-        this.hudText.y = this.hudStart.y;
-        this.stage.addChild(this.hudText);
     }
 
     private getActorWorldPosition(a: Actor) : Point {
@@ -224,12 +245,11 @@ class Game {
         );
     }
 
-    private setHudText(text: string) : void {
-        this.hudText.text = 'Pressed key ' + text;
-    }
-
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
+
+        this.drawHud();
+
         this.renderer.render(this.stage);
     }
 }

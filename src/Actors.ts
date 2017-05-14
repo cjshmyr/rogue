@@ -9,7 +9,16 @@ class Actor {
 }
 
 class Hero extends Actor {
-    gold: number;
+    health: number = 25;
+    gold: number = 0;
+
+    constructor(sprite: PIXI.Sprite, location: Point) {
+        super(sprite, location);
+    }
+}
+
+class Npc extends Actor {
+    health: number = 5;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
@@ -29,6 +38,8 @@ class Wall extends Actor {
 }
 
 class Gold extends Actor {
+    amount: number = 5;
+
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
     }
