@@ -1,16 +1,29 @@
 class Actor {
     sprite: PIXI.Sprite;
     location: Point;
+    health: number = 0;
+    damage: number = 0;
+    gold: number = 0;
+    name: string =  'undefined';
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;
         this.location = location;
     }
+
+    inflictDamage(amount: number) {
+        this.health -= amount;
+    }
+
+    isDead() : boolean {
+        return this.health <= 0;
+    }
 }
 
 class Hero extends Actor {
     health: number = 25;
-    gold: number = 0;
+    damage: number = 3;
+    name: string = 'Hero';
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
@@ -19,6 +32,8 @@ class Hero extends Actor {
 
 class Npc extends Actor {
     health: number = 5;
+    damage: number = 6;
+    name: string = 'Monster';
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);

@@ -19,10 +19,12 @@ class Game {
     readonly rightHudStart: Point = new Point(500, 16);
     rightHudText: PIXI.Text;
     hudLastPressedKey: string;
+    hudCombatLog: string[] = [];
 
     // Game
     actors: Actor[];
     hero: Hero;
+    playerTurn: boolean = true;
 
     constructor() {
         // Setup
@@ -51,23 +53,25 @@ class Game {
             console.log('pressed: ' + event.keyCode);
             this.hudLastPressedKey = event.key;
 
-            let movement: Point;
+            if (this.playerTurn) {
+                let movement: Point; // TODO: It's more like an action direction.
 
-            if (event.keyCode == 38) { // Up
-                movement = new Point(0, -1);
-            }
-            else if (event.keyCode == 40) { // Down
-                movement = new Point(0, 1);
-            }
-            else if (event.keyCode == 37) { // Left
-                movement = new Point(-1, 0);
-            }
-            else if (event.keyCode == 39) { // Right
-                movement = new Point(1, 0);
-            }
+                if (event.keyCode == 38) { // Up
+                    movement = new Point(0, -1);
+                }
+                else if (event.keyCode == 40) { // Down
+                    movement = new Point(0, 1);
+                }
+                else if (event.keyCode == 37) { // Left
+                    movement = new Point(-1, 0);
+                }
+                else if (event.keyCode == 39) { // Right
+                    movement = new Point(1, 0);
+                }
 
-            if (movement != null) {
-                this.moveHero(movement);
+                if (movement != null) {
+                    this.moveHero(movement);
+                }
             }
         });
     }
@@ -89,8 +93,21 @@ class Game {
     }
 
     private drawHud() : void {
-        this.buttomHudText.text = 'Last key: ' + this.hudLastPressedKey;
-        this.rightHudText.text = 'Health: ' + this.hero.health + '\nGold:' + this.hero.gold;
+        // Display the 6-top most items
+
+        let combatLog = '';
+        let lastSixLines = this.hudCombatLog.slice(Math.max(this.hudCombatLog.length - 6, 0));
+        for (let l of lastSixLines) {
+            if (combatLog == '')
+                combatLog = l;
+            else
+                combatLog += '\n' + l;
+        }
+        this.buttomHudText.text = combatLog;
+
+        this.rightHudText.text = 'Health: ' + this.hero.health
+            + '\nGold: ' + this.hero.gold
+            + '\n\n-- debug --\nLast key pressed: ' + this.hudLastPressedKey;
     }
 
     private moveHero(movement: Point) : void {
@@ -100,11 +117,35 @@ class Game {
         // Check if destination is blocked
         for (let a of actorsAtPos) {
             if (a instanceof Wall) {
+                this.hudCombatLog.push('You cannot move there.' );
                 return; // Don't get them move
             }
         }
 
         // -- Player turn start --
+
+        // Check if we're attacking something
+        for (let a of actorsAtPos) {
+            if (a instanceof Npc) {
+                // Atack it!
+                a.inflictDamage(this.hero.damage);
+
+                this.hudCombatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
+
+                if (a.isDead()) {
+                    this.hudCombatLog.push('You killed ' + a.name + '!');
+                    this.stage.removeChild(a.sprite);
+
+                    // Remove from global actors list (TODO: Move into a function, reusable)
+                    let index: number = this.actors.indexOf(a, 0);
+                    if (index > -1) {
+                        this.actors.splice(index, 1);
+                    }
+                }
+
+                return;
+            }
+        }
 
         // Check if there's anything we can pick up by walking over it
         for (let a of actorsAtPos) {
@@ -114,7 +155,7 @@ class Game {
 
                 // console.log('actor count before: ' + this.actors.length);
 
-                // Remove from global actors list
+                // Remove from global actors list  (TODO: Move into a function, reusable)
                 let index: number = this.actors.indexOf(a, 0);
                 if (index > -1) {
                     this.actors.splice(index, 1);
@@ -124,6 +165,8 @@ class Game {
 
                 // Give some gold
                 this.hero.gold += a.amount;
+
+                this.hudCombatLog.push('You picked up ' + a.amount + ' gold!');
             }
         }
 
@@ -236,6 +279,16 @@ class Game {
         gold.sprite.position.x = goldPos.x;
         gold.sprite.position.y = goldPos.y;
         this.stage.addChild(gold.sprite);
+
+        // Add a generic npc (enemy)
+        let npcSprite = new PIXI.Sprite(this.atlas['sprite378']);
+        let npc = new Npc(npcSprite, new Point(5, 5));
+        this.actors.push(npc);
+
+        let npcPos = this.getActorWorldPosition(npc);
+        npc.sprite.position.x = npcPos.x;
+        npc.sprite.position.y = npcPos.y;
+        this.stage.addChild(npc.sprite);
     }
 
     private getActorWorldPosition(a: Actor) : Point {
