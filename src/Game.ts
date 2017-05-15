@@ -54,7 +54,7 @@ class Game {
             this.hudLastPressedKey = event.key;
 
             if (this.playerTurn) {
-                let movement: Point; // TODO: It's more like an action direction.
+                let movement: Point;
 
                 if (event.keyCode == 38) { // Up
                     movement = new Point(0, -1);
@@ -70,7 +70,7 @@ class Game {
                 }
 
                 if (movement != null) {
-                    this.moveHero(movement);
+                    this.doHeroAction(movement);
                 }
             }
         });
@@ -107,25 +107,29 @@ class Game {
 
         this.rightHudText.text = 'Health: ' + this.hero.health
             + '\nGold: ' + this.hero.gold
-            + '\n\n-- debug --\nLast key pressed: ' + this.hudLastPressedKey;
+            + '\n\n-- debug --'
+            + '\nLast key pressed: ' + this.hudLastPressedKey
+            + '\nHero position (x,y): ' + this.hero.location.x + ',' + this.hero.location.y
+            + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai');
     }
 
-    private moveHero(movement: Point) : void {
+    private doHeroAction(movement: Point) : void {
         let destination = Point.Add(this.hero.location, movement);
-        let actorsAtPos: Actor[] = this.actorsAtPosition(destination);
+        let actorsAtDest: Actor[] = this.actorsAtPosition(destination);
 
         // Check if destination is blocked
-        for (let a of actorsAtPos) {
+        for (let a of actorsAtDest) {
             if (a instanceof Wall) {
                 this.hudCombatLog.push('You cannot move there.' );
-                return; // Don't get them move
+
+                this.playerTurn = false;
+                this.doNpcAction();
+                return;
             }
         }
 
-        // -- Player turn start --
-
         // Check if we're attacking something
-        for (let a of actorsAtPos) {
+        for (let a of actorsAtDest) {
             if (a instanceof Npc) {
                 // Atack it!
                 a.inflictDamage(this.hero.damage);
@@ -143,25 +147,23 @@ class Game {
                     }
                 }
 
+                this.playerTurn = false;
+                this.doNpcAction();
                 return;
             }
         }
 
         // Check if there's anything we can pick up by walking over it
-        for (let a of actorsAtPos) {
+        for (let a of actorsAtDest) {
             if (a instanceof Gold) {
                 // Pick it up!
                 this.stage.removeChild(a.sprite);
-
-                // console.log('actor count before: ' + this.actors.length);
 
                 // Remove from global actors list  (TODO: Move into a function, reusable)
                 let index: number = this.actors.indexOf(a, 0);
                 if (index > -1) {
                     this.actors.splice(index, 1);
                 }
-
-                // console.log('actor count after: ' + this.actors.length);
 
                 // Give some gold
                 this.hero.gold += a.amount;
@@ -176,7 +178,70 @@ class Game {
         this.hero.sprite.x = pos.x;
         this.hero.sprite.y = pos.y;
 
-        // console.log('actors at pos count: ' + actorsAtPos.length);
+        this.playerTurn = false;
+        this.doNpcAction();
+    }
+
+    private doNpcAction() : void {
+        if (!this.playerTurn) {
+            for (let a of this.actors) {
+                if (a instanceof Npc) {
+                    // TODO: Attempt to move towards player
+                    // This is insanely stupid.
+                    let destination = SimplePathfinder.GetClosestCellBetweenPoints(a.location, this.hero.location);
+
+                    let actorsInDest = this.actorsAtPosition(destination);
+
+                    // Check if we can even move there -- otherwise, give up.
+                    let canMove: boolean = true;
+                    for (let a2 of actorsInDest) {
+                        if (a2 instanceof Wall) {
+                            canMove = false;
+                            break;
+                        }
+                    }
+                    if (!canMove)
+                        continue;
+
+                    // Attack player if next to them.
+                    let attacked: boolean;
+                    for (let h of actorsInDest) {
+                        if (h instanceof Hero) {
+                            // Attack player
+                            h.inflictDamage(a.damage);
+
+                            this.hudCombatLog.push(a.name + ' attacked you for for ' + a.damage + ' damage.');
+
+                            if (h.isDead()) {
+                                this.hudCombatLog.push(a.name + ' killed you!');
+                                this.stage.removeChild(h.sprite);
+
+                                // Remove from global actors list (TODO: Move into a function, reusable)
+                                let index: number = this.actors.indexOf(h, 0);
+                                if (index > -1) {
+                                    this.actors.splice(index, 1);
+                                }
+
+                                // TODO: Hero needs to die.
+                            }
+                            attacked = true;
+                            break;
+                        }
+                    }
+
+                    if (!attacked) {
+                        // Move otherwise.
+                        a.location = destination;
+                        let pos = this.getActorWorldPosition(a);
+                        a.sprite.x = pos.x;
+                        a.sprite.y = pos.y;
+                    }
+                }
+            }
+
+            // If no AI
+            this.playerTurn = true;
+        }
     }
 
     private actorsAtPosition(position: Point) : Actor[] {
@@ -281,14 +346,18 @@ class Game {
         this.stage.addChild(gold.sprite);
 
         // Add a generic npc (enemy)
-        let npcSprite = new PIXI.Sprite(this.atlas['sprite378']);
-        let npc = new Npc(npcSprite, new Point(5, 5));
-        this.actors.push(npc);
+        let enemies = [new Point(25, 13), new Point(5,5), new Point(16, 28), new Point(1, 28), new Point(27,6)];
+        for (let e of enemies)
+        {
+            let npcSprite = new PIXI.Sprite(this.atlas['sprite378']);
+            let npc = new Npc(npcSprite,e );
+            this.actors.push(npc);
 
-        let npcPos = this.getActorWorldPosition(npc);
-        npc.sprite.position.x = npcPos.x;
-        npc.sprite.position.y = npcPos.y;
-        this.stage.addChild(npc.sprite);
+            let npcPos = this.getActorWorldPosition(npc);
+            npc.sprite.position.x = npcPos.x;
+            npc.sprite.position.y = npcPos.y;
+            this.stage.addChild(npc.sprite);
+        }
     }
 
     private getActorWorldPosition(a: Actor) : Point {

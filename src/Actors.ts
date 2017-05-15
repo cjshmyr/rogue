@@ -32,7 +32,7 @@ class Hero extends Actor {
 
 class Npc extends Actor {
     health: number = 5;
-    damage: number = 6;
+    damage: number = 3;
     name: string = 'Monster';
 
     constructor(sprite: PIXI.Sprite, location: Point) {
