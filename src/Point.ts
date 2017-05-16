@@ -15,6 +15,10 @@ class Point {
         return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
     }
 
+    static DistanceSquared(p1: Point, p2: Point) : number {
+        return Math.sqrt(this.Distance(p1, p2));
+    }
+
     Equals(p: Point) : boolean {
         return this.x == p.x && this.y == p.y;
     }

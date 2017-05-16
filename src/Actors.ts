@@ -5,6 +5,7 @@ class Actor {
     damage: number = 0;
     gold: number = 0;
     name: string =  'undefined';
+    lightSourceRange: number = 0;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;
@@ -24,6 +25,7 @@ class Hero extends Actor {
     health: number = 25;
     damage: number = 3;
     name: string = 'Hero';
+    lightSourceRange: number = 3;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);

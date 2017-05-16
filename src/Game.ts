@@ -92,7 +92,7 @@ class Game {
         this.stage.addChild(this.rightHudText);
     }
 
-    private drawHud() : void {
+    private updateHud() : void {
         // Display the 6-top most items
 
         let combatLog = '';
@@ -180,8 +180,13 @@ class Game {
 
         this.playerTurn = false;
         this.doNpcAction();
+
+        // todo: move elsehwere -- also only happens after a player move
+        this.applyLightSources();
     }
 
+    // TODO: Lots of overlap with hero actions
+    // TODO: NPC collisions
     private doNpcAction() : void {
         if (!this.playerTurn) {
             for (let a of this.actors) {
@@ -254,6 +259,46 @@ class Game {
         }
 
         return actorsAtPos;
+    }
+
+    private actorsInPoints(points: Point[]) : Actor[] {
+        let actorsInPoints: Actor[] = [];
+
+        for (let a of this.actors) {
+            for (let p of points) {
+                if (a.location.Equals(p)) {
+                    actorsInPoints.push(a);
+                }
+            }
+        }
+
+        return actorsInPoints;
+    }
+
+    private pointsInBox(center: Point, range: number = 0) {
+        let points: Point[] = [];
+
+        for (let y = center.y - range; y <= center.y + range; y++) {
+            for (let x = center.x - range; x <= center.x + range; x++) {
+                points.push(new Point(x,y));
+            }
+        }
+
+        return points;
+    }
+
+    private pointsInCircle(center: Point, range: number = 0) {
+        let points: Point[] = [];
+
+        for (let y = center.y - range; y <= center.y + range; y++) {
+            for (let x = center.x - range; x <= center.x + range; x++) {
+                if (Point.DistanceSquared(center, new Point(x,y)) <= range) {
+                    points.push(new Point(x,y));
+                }
+            }
+        }
+
+        return points;
     }
 
     private addTestMap() : void {
@@ -367,10 +412,27 @@ class Game {
         );
     }
 
+    private applyLightSources() : void {
+        // Hacky: dim everything, then apply sources
+        for (let a of this.actors) {
+            a.sprite.tint = 0x606060;
+        }
+
+        // Hacky: assumes hero's the only source
+        let nearbyPoints = this.pointsInCircle(this.hero.location, 4);
+
+        // Hacky: we don't really want to do this for everything either
+        let actorsInPoints = this.actorsInPoints(nearbyPoints);
+
+        for (let a of actorsInPoints) {
+            a.sprite.tint = 0xFFFFFF;
+        }
+    }
+
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
 
-        this.drawHud();
+        this.updateHud();
 
         this.renderer.render(this.stage);
     }
