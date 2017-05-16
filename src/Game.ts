@@ -22,7 +22,7 @@ class Game {
     hudCombatLog: string[] = [];
 
     // Game
-    actors: Actor[];
+    actors: Actor[]; // TODO: Should we initialize this as an empty array?
     hero: Hero;
     playerTurn: boolean = true;
 
@@ -43,7 +43,7 @@ class Game {
 
     private setupRenderer() : void {
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
-        this.renderer = PIXI.autoDetectRenderer(800, 600, { backgroundColor: 0x606060, view: canvas });
+        this.renderer = PIXI.autoDetectRenderer(800, 600, { backgroundColor: HudColor.Background, view: canvas });
         this.stage = new PIXI.Container();
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
     }
@@ -79,14 +79,14 @@ class Game {
     private setupHud() : void {
         this.buttomHudText = new PIXI.Text('');
         this.buttomHudText.style.fontSize = 12;
-        this.buttomHudText.style.fill = 0xFFFFFF;
+        this.buttomHudText.style.fill = HudColor.Font;
         this.buttomHudText.x = this.bottomHudStart.x;
         this.buttomHudText.y = this.bottomHudStart.y;
         this.stage.addChild(this.buttomHudText);
 
         this.rightHudText = new PIXI.Text('');
         this.rightHudText.style.fontSize = 12;
-        this.rightHudText.style.fill = 0xFFFFFF;
+        this.rightHudText.style.fill = HudColor.Font;
         this.rightHudText.x = this.rightHudStart.x;
         this.rightHudText.y = this.rightHudStart.y;
         this.stage.addChild(this.rightHudText);
@@ -113,155 +113,119 @@ class Game {
             + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai');
     }
 
+    private removeActorFromWorld(a: Actor) : void {
+        // Remove their sprite
+        this.stage.removeChild(a.sprite);
+
+        // Remove them from `actors` array
+        let index: number = this.actors.indexOf(a, 0);
+        if (index > -1) {
+            this.actors.splice(index, 1);
+        }
+    }
+
     private doHeroAction(movement: Point) : void {
         let destination = Point.Add(this.hero.location, movement);
-        let actorsAtDest: Actor[] = this.actorsAtPosition(destination);
+        let actorsAtDest: Actor[] = this.findActorsAtPoint(destination);
 
-        // Check if destination is blocked
+        let allowMove: boolean = true;
         for (let a of actorsAtDest) {
-            if (a instanceof Wall) {
-                this.hudCombatLog.push('You cannot move there.' );
+            if (a instanceof Wall) { // Check if destination is blocked
+                this.hudCombatLog.push('You cannot move there.');
 
-                this.playerTurn = false;
-                this.doNpcAction();
-                return;
+                allowMove = false;
             }
-        }
-
-        // Check if we're attacking something
-        for (let a of actorsAtDest) {
-            if (a instanceof Npc) {
+            else if (a instanceof Npc) { // Check if we're attacking something
                 // Atack it!
                 a.inflictDamage(this.hero.damage);
-
                 this.hudCombatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
 
                 if (a.isDead()) {
                     this.hudCombatLog.push('You killed ' + a.name + '!');
-                    this.stage.removeChild(a.sprite);
-
-                    // Remove from global actors list (TODO: Move into a function, reusable)
-                    let index: number = this.actors.indexOf(a, 0);
-                    if (index > -1) {
-                        this.actors.splice(index, 1);
-                    }
+                    this.removeActorFromWorld(a);
                 }
 
-                this.playerTurn = false;
-                this.doNpcAction();
-                return;
+                allowMove = false;
             }
-        }
-
-        // Check if there's anything we can pick up by walking over it
-        for (let a of actorsAtDest) {
-            if (a instanceof Gold) {
+            else if (a instanceof Gold) { // Check if we're picking up something
                 // Pick it up!
-                this.stage.removeChild(a.sprite);
-
-                // Remove from global actors list  (TODO: Move into a function, reusable)
-                let index: number = this.actors.indexOf(a, 0);
-                if (index > -1) {
-                    this.actors.splice(index, 1);
-                }
-
-                // Give some gold
+                // Give gold
                 this.hero.gold += a.amount;
 
                 this.hudCombatLog.push('You picked up ' + a.amount + ' gold!');
+                this.removeActorFromWorld(a);
             }
         }
 
-        // Move our hero
-        this.hero.location = destination;
-        let pos = this.getActorWorldPosition(this.hero);
-        this.hero.sprite.x = pos.x;
-        this.hero.sprite.y = pos.y;
+        if (allowMove) {
+            this.updateActorPosition(this.hero, destination);
+        }
 
         this.playerTurn = false;
-        this.doNpcAction();
-
-        // todo: move elsehwere -- also only happens after a player move
-        this.applyLightSources();
+        this.doNpcActions();
     }
 
-    // TODO: Lots of overlap with hero actions
-    // TODO: NPC collisions
-    private doNpcAction() : void {
-        if (!this.playerTurn) {
-            for (let a of this.actors) {
-                if (a instanceof Npc) {
-                    // TODO: Attempt to move towards player
-                    // This is insanely stupid.
-                    let destination = SimplePathfinder.GetClosestCellBetweenPoints(a.location, this.hero.location);
-
-                    let actorsInDest = this.actorsAtPosition(destination);
-
-                    // Check if we can even move there -- otherwise, give up.
-                    let canMove: boolean = true;
-                    for (let a2 of actorsInDest) {
-                        if (a2 instanceof Wall) {
-                            canMove = false;
-                            break;
-                        }
-                    }
-                    if (!canMove)
-                        continue;
-
-                    // Attack player if next to them.
-                    let attacked: boolean;
-                    for (let h of actorsInDest) {
-                        if (h instanceof Hero) {
-                            // Attack player
-                            h.inflictDamage(a.damage);
-
-                            this.hudCombatLog.push(a.name + ' attacked you for for ' + a.damage + ' damage.');
-
-                            if (h.isDead()) {
-                                this.hudCombatLog.push(a.name + ' killed you!');
-                                this.stage.removeChild(h.sprite);
-
-                                // Remove from global actors list (TODO: Move into a function, reusable)
-                                let index: number = this.actors.indexOf(h, 0);
-                                if (index > -1) {
-                                    this.actors.splice(index, 1);
-                                }
-
-                                // TODO: Hero needs to die.
-                            }
-                            attacked = true;
-                            break;
-                        }
-                    }
-
-                    if (!attacked) {
-                        // Move otherwise.
-                        a.location = destination;
-                        let pos = this.getActorWorldPosition(a);
-                        a.sprite.x = pos.x;
-                        a.sprite.y = pos.y;
-                    }
-                }
-            }
-
-            // If no AI
-            this.playerTurn = true;
-        }
-    }
-
-    private actorsAtPosition(position: Point) : Actor[] {
-        let actorsAtPos: Actor[] = [];
-
+    private doNpcActions() : void {
         for (let a of this.actors) {
-            if (a.location.Equals(position)) {
-                actorsAtPos.push(a);
+            if (a instanceof Npc) {
+                this.doNpcAction(a);
             }
         }
 
-        return actorsAtPos;
+        this.playerTurn = true;
     }
 
-    private actorsInPoints(points: Point[]) : Actor[] {
+    private doNpcAction(npc: Npc) {
+        // TODO: Attempt to move towards player
+        // This is insanely stupid.
+        let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.location, this.hero.location);
+        let actorsAtDest = this.findActorsAtPoint(destination);
+
+        let allowMove: boolean = true;
+        for (let a of actorsAtDest) {
+            if (a instanceof Wall || a instanceof Npc) {
+                allowMove = false;
+            }
+            else if (a instanceof Hero) {
+                // Attack player
+                a.inflictDamage(npc.damage);
+                this.hudCombatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
+
+                if (a.isDead()) {
+                    this.hudCombatLog.push(npc.name + ' killed you!');
+                    this.removeActorFromWorld(a);
+
+                    // TODO: Hero needs to die.
+                }
+
+                allowMove = false;
+            }
+        }
+
+        if (allowMove) {
+            this.updateActorPosition(npc, destination);
+        }
+    }
+
+    private updateActorPosition(a: Actor, destination: Point) : void {
+        a.location = destination;
+        let pos = this.getActorWorldPosition(a);
+        a.sprite.x = pos.x;
+        a.sprite.y = pos.y;
+    }
+
+    private getActorWorldPosition(a: Actor) : Point { // TODO: Will need refactor with camera/animation changes.
+        return new Point(
+            a.sprite.position.x = this.worldStart.x + (a.location.x * this.worldSpriteSize),
+            a.sprite.position.y = this.worldStart.y + (a.location.y * this.worldSpriteSize)
+        );
+    }
+
+    private findActorsAtPoint(p: Point) : Actor[] {
+        return this.findActorsAtPoints([p]);
+    }
+
+    private findActorsAtPoints(points: Point[]) : Actor[] {
         let actorsInPoints: Actor[] = [];
 
         for (let a of this.actors) {
@@ -288,17 +252,34 @@ class Game {
     }
 
     private pointsInCircle(center: Point, range: number = 0) {
+        let pointsInBox = this.pointsInBox(center, range);
         let points: Point[] = [];
 
-        for (let y = center.y - range; y <= center.y + range; y++) {
-            for (let x = center.x - range; x <= center.x + range; x++) {
-                if (Point.DistanceSquared(center, new Point(x,y)) <= range) {
-                    points.push(new Point(x,y));
-                }
+        for (let p of pointsInBox) {
+            if (Point.DistanceSquared(center, p) <= range) {
+                points.push(p);
             }
         }
 
         return points;
+    }
+
+    private applyLightSources() : void {
+        if (this.actors == null)
+            return;
+
+        // Hacky: dim everything, then apply sources
+        for (let a of this.actors) {
+            a.sprite.tint = LightSourceTint.Fog;
+        }
+
+        // Hacky: assumes hero's the only source
+        let nearbyPoints = this.pointsInCircle(this.hero.location, this.hero.lightSourceRange);
+        let nearbyActors = this.findActorsAtPoints(nearbyPoints);
+
+        for (let a of nearbyActors) {
+            a.sprite.tint = LightSourceTint.Visible;
+        }
     }
 
     private addTestMap() : void {
@@ -390,12 +371,12 @@ class Game {
         gold.sprite.position.y = goldPos.y;
         this.stage.addChild(gold.sprite);
 
-        // Add a generic npc (enemy)
+        // Add generic enemies
         let enemies = [new Point(25, 13), new Point(5,5), new Point(16, 28), new Point(1, 28), new Point(27,6)];
         for (let e of enemies)
         {
             let npcSprite = new PIXI.Sprite(this.atlas['sprite378']);
-            let npc = new Npc(npcSprite,e );
+            let npc = new Npc(npcSprite, e);
             this.actors.push(npc);
 
             let npcPos = this.getActorWorldPosition(npc);
@@ -405,35 +386,23 @@ class Game {
         }
     }
 
-    private getActorWorldPosition(a: Actor) : Point {
-        return new Point(
-            a.sprite.position.x = this.worldStart.x + (a.location.x * this.worldSpriteSize),
-            a.sprite.position.y = this.worldStart.y + (a.location.y * this.worldSpriteSize)
-        );
-    }
-
-    private applyLightSources() : void {
-        // Hacky: dim everything, then apply sources
-        for (let a of this.actors) {
-            a.sprite.tint = 0x606060;
-        }
-
-        // Hacky: assumes hero's the only source
-        let nearbyPoints = this.pointsInCircle(this.hero.location, 4);
-
-        // Hacky: we don't really want to do this for everything either
-        let actorsInPoints = this.actorsInPoints(nearbyPoints);
-
-        for (let a of actorsInPoints) {
-            a.sprite.tint = 0xFFFFFF;
-        }
-    }
-
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
 
         this.updateHud();
+        this.applyLightSources();
 
         this.renderer.render(this.stage);
     }
+}
+
+enum HudColor {
+    Background = 0x606060, // Grey
+    Font = 0xffffff // White
+}
+
+enum LightSourceTint {
+    Visible = 0xffffff, // None
+    Fog = 0x606060, // Grey (dimmed)
+    Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
