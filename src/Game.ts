@@ -268,8 +268,12 @@ class Game {
         if (this.actors == null)
             return;
 
-        // Hacky: dim everything, then apply sources
+        // Dim/shroud everything, then apply sources
         for (let a of this.actors) {
+            // Render if they're not hidden under fog
+            a.sprite.visible = !a.hiddenUnderFog;
+
+            // Set appropriate tint (fog, shroud)
             a.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
@@ -279,6 +283,7 @@ class Game {
 
         for (let a of nearbyActors) {
             a.sprite.tint = LightSourceTint.Visible;
+            a.sprite.visible = true;
             a.revealed = true;
         }
     }

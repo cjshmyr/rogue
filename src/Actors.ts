@@ -1,5 +1,6 @@
 class Actor {
     sprite: PIXI.Sprite;
+
     location: Point;
     health: number = 0;
     damage: number = 0;
@@ -7,14 +8,15 @@ class Actor {
     name: string =  'undefined';
 
     lightSourceRange: number = 0;
-    revealed: boolean = false; // Appears under fog
+    revealed: boolean = false; // Has been revealed before
+    hiddenUnderFog: boolean = false; // TODO: Should be constant
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;
         this.location = location;
     }
 
-    inflictDamage(amount: number) {
+    inflictDamage(amount: number) : void {
         this.health -= amount;
     }
 
@@ -38,6 +40,7 @@ class Npc extends Actor {
     health: number = 5;
     damage: number = 3;
     name: string = 'Monster';
+    hiddenUnderFog: boolean = true;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
