@@ -5,7 +5,9 @@ class Actor {
     damage: number = 0;
     gold: number = 0;
     name: string =  'undefined';
+
     lightSourceRange: number = 0;
+    revealed: boolean = false; // Appears under fog
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;

@@ -270,7 +270,7 @@ class Game {
 
         // Hacky: dim everything, then apply sources
         for (let a of this.actors) {
-            a.sprite.tint = LightSourceTint.Fog;
+            a.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
         // Hacky: assumes hero's the only source
@@ -279,6 +279,7 @@ class Game {
 
         for (let a of nearbyActors) {
             a.sprite.tint = LightSourceTint.Visible;
+            a.revealed = true;
         }
     }
 
@@ -403,6 +404,6 @@ enum HudColor {
 
 enum LightSourceTint {
     Visible = 0xffffff, // None
-    Fog = 0x606060, // Grey (dimmed)
+    Fog = 0xa6a6a6, // Grey (dimmed) - 65% darkness
     Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
