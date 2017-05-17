@@ -8,8 +8,9 @@ class Actor {
     name: string =  'undefined';
 
     lightSourceRange: number = 0;
-    revealed: boolean = false; // Has been revealed before
-    hiddenUnderFog: boolean = false; // TODO: Should be constant
+    revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)
+    hiddenUnderFog: boolean = false; // Is this hidden under fog TODO: Should be constant
+    blocksLight: boolean = false; // Blocks light sources
 
     renderVisibility: boolean = false; // Is in camera bounds
 
@@ -31,7 +32,7 @@ class Hero extends Actor {
     health: number = 25;
     damage: number = 3;
     name: string = 'Hero';
-    lightSourceRange: number = 3;
+    lightSourceRange: number = 10;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
@@ -40,7 +41,7 @@ class Hero extends Actor {
 
 class Npc extends Actor {
     health: number = 5;
-    damage: number = 3;
+    damage: number = 2;
     name: string = 'Monster';
     hiddenUnderFog: boolean = true;
 
@@ -56,6 +57,8 @@ class Floor extends Actor {
 }
 
 class Wall extends Actor {
+    blocksLight: boolean = true;
+
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
     }

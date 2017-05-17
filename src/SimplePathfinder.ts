@@ -6,10 +6,10 @@ class SimplePathfinder {
         let left = Point.Add(start, new Point(-1, 0));
         let right = Point.Add(start, new Point(1, 0));
 
-        let upDistance = Point.Distance(up, end);
-        let downDistance = Point.Distance(down, end);
-        let leftDistance = Point.Distance(left, end);
-        let rightDistance = Point.Distance(right, end);
+        let upDistance = Point.DistanceSquared(up, end);
+        let downDistance = Point.DistanceSquared(down, end);
+        let leftDistance = Point.DistanceSquared(left, end);
+        let rightDistance = Point.DistanceSquared(right, end);
 
         let distances = [upDistance, downDistance, leftDistance, rightDistance];
         let sorted = distances.sort((a,b) => { return a - b });

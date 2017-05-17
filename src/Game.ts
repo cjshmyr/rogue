@@ -255,7 +255,7 @@ class Game {
         return actorsInPoints;
     }
 
-    private pointsInBox(center: Point, range: number = 0) {
+    private pointsInBox(center: Point, range: number = 0) : Point[] {
         let points: Point[] = [];
 
         for (let y = center.y - range; y <= center.y + range; y++) {
@@ -267,17 +267,103 @@ class Game {
         return points;
     }
 
-    private pointsInCircle(center: Point, range: number = 0) {
+    private pointsInCircle(center: Point, range: number = 0) : Point[] {
         let pointsInBox = this.pointsInBox(center, range);
         let points: Point[] = [];
 
         for (let p of pointsInBox) {
-            if (Point.DistanceSquared(center, p) <= range) {
+            if (Point.Distance(center, p) <= range) {
                 points.push(p);
             }
         }
 
         return points;
+    }
+
+    private pointsInAnnulus(center: Point, range: number = 0, thickness: number = 1) : Point[] {
+        let points: Point[] = [];
+
+        // Hacky -- eventually replace with Midpoint algorithm
+        let pointsInCircle = this.pointsInCircle(center, range);
+        let pointsInInnerCircle = this.pointsInCircle(center, range - thickness);
+
+        for (let p of pointsInCircle) {
+            let isInInnerCircle = false;
+
+            for (let q of pointsInInnerCircle) {
+                if (p.Equals(q)) {
+                    isInInnerCircle = true;
+                    break;
+                }
+            }
+
+            if (!isInInnerCircle) {
+                points.push(p);
+            }
+        }
+
+        return points;
+    }
+
+    private pointsInLine(p1z: Point, p2z: Point) : Point[] {
+        // Bresenham line algorithm (integer)
+        // Taken from JS example @ http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+        let points: Point[] = [];
+
+        let p1 = new Point(p1z.x, p1z.y);
+        let p2 = new Point(p2z.x, p2z.y);
+
+        let steep = Math.abs(p2.y - p1.y) > Math.abs(p2.x - p1.x);
+        if (steep){
+            let tmp;
+            //swap p1.x, p1.y
+            tmp = p1.x;
+            p1.x = p1.y;
+            p1.y = tmp;
+            //swap p2.x, p2.y
+            tmp = p2.x;
+            p2.x = p2.y;
+            p2.y = tmp;
+        }
+
+        let sign = 1;
+        if (p1.x > p2.x) {
+            sign = -1;
+            p1.x *= -1;
+            p2.x *= -1;
+        }
+
+        let dx = p2.x - p1.x;
+        let dy = Math.abs(p2.y - p1.y);
+        let err = ((dx / 2));
+        let ystep = p1.y < p2.y ? 1 : -1;
+        let y = p1.y;
+
+        for (var x = p1.x; x <= p2.x; x++) {
+            if(!(steep ? points.push(new Point(y, sign*x)) : points.push(new Point(sign * x, y)))) {
+                return;
+            }
+            err = (err - dy);
+            if (err < 0) {
+                y += ystep;
+                err += dx;
+            }
+        }
+
+        return points;
+    }
+
+    private debug_listPoints(points: Point[]) : string {
+        let debugMe = '';
+
+        for (let p of points) {
+            if (debugMe == '')
+                debugMe = '(' + p.x + ',' + p.y + ')'
+            else
+                debugMe += ',(' + p.x + ',' + p.y + ')'
+        }
+
+        return debugMe;
     }
 
     private applyLightSources() : void {
@@ -290,13 +376,38 @@ class Game {
             if (!a.renderVisibility)
                 continue;
 
-            // Render if they're not hidden under fog
+            // Set visible if they're not hidden under fog
             a.sprite.visible = !a.hiddenUnderFog;
 
             // Set appropriate tint (fog, shroud)
             a.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
+        // Dynamic lighting (TODO: Preferrably using an annulus, but circle looks good)
+        for (let p of this.pointsInCircle(this.hero.location, this.hero.lightSourceRange)) {
+             let line = this.pointsInLine(this.hero.location, p);
+
+             let obstructing = false;
+             // Begin from light source origin
+             for (let point of line) {
+
+                if (obstructing)
+                    break;
+
+                for (let a of this.findActorsAtPoint(point)) {
+                    if (a.blocksLight) {
+                        obstructing = true;
+                    }
+
+                    // We don't want to block the object itself from being lit, just ones after it.
+                    a.sprite.tint = LightSourceTint.Visible;
+                    a.sprite.visible = true;
+                    a.revealed = true;
+                }
+             }
+        }
+
+        /*
         // Hacky: assumes hero's the only source
         let nearbyPoints = this.pointsInCircle(this.hero.location, this.hero.lightSourceRange);
         let nearbyActors = this.findActorsAtPoints(nearbyPoints);
@@ -306,6 +417,45 @@ class Game {
             a.sprite.visible = true;
             a.revealed = true;
         }
+        */
+    }
+
+    private centerCameraOnHero() : void {
+        // center on hero (not exactly center yet)
+        let heroPos = this.getActorWorldPosition(this.hero);
+        this.worldContainer.x = (this.renderer.width / 2) - heroPos.x;
+        this.worldContainer.y = (this.renderer.height / 2) - heroPos.y;
+
+        // don't render things outside of viewport
+        let topLeft = heroPos.x - ((this.worldTileWidth / 2) * this.worldSpriteSize);
+        let topRight = heroPos.x + ((this.worldTileWidth / 2) * this.worldSpriteSize);
+        let bottomLeft = heroPos.y - ((this.worldTileHeight / 2) * this.worldSpriteSize);
+
+        for (let a of this.actors) {
+            let pos = this.getActorWorldPosition(a);
+
+            if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
+                a.renderVisibility = true;
+                a.sprite.visible = true;
+            }
+            else {
+                a.renderVisibility = false;
+                a.sprite.visible = false;
+            }
+
+        }
+
+    }
+
+    private gameLoop = () => {
+        requestAnimationFrame(this.gameLoop);
+
+        this.centerCameraOnHero(); // TODO: Doesn't need to happen every tick?
+
+        this.updateHud();
+        this.applyLightSources();
+
+        this.renderer.render(this.stage);
     }
 
     private addTestMap() : void {
@@ -317,9 +467,9 @@ class Game {
             "#               #            #",
             "#      #        #            #",
             "#      #        #            #",
-            "#      #        #        #   #",
-            "#      #        #        #   #",
-            "#      #        #    ###### ##",
+            "# #  # #        #        #   #",
+            "# #    #        #        #   #",
+            "# #    #        #    ###### ##",
             "#      #                     #",
             "#      #                     #",
             "#      ##########         ####",
@@ -329,7 +479,7 @@ class Game {
             "#      ##########            #",
             "#      ###############       #",
             "#                            #",
-            "#                            #",
+            "#       #    #      #        #",
             "#                            #",
             "######### ########           #",
             "######### ########           #",
@@ -410,44 +560,6 @@ class Game {
             npc.sprite.position.y = npcPos.y;
             this.worldContainer.addChild(npc.sprite);
         }
-    }
-
-    private centerCameraOnHero() : void {
-        // center on hero (not exactly center yet)
-        let heroPos = this.getActorWorldPosition(this.hero);
-        this.worldContainer.x = (this.renderer.width / 2) - heroPos.x;
-        this.worldContainer.y = (this.renderer.height / 2) - heroPos.y;
-
-        // don't render things outside of viewport
-        let topLeft = heroPos.x - ((this.worldTileWidth / 2) * this.worldSpriteSize);
-        let topRight = heroPos.x + ((this.worldTileWidth / 2) * this.worldSpriteSize);
-        let bottomLeft = heroPos.y - ((this.worldTileHeight / 2) * this.worldSpriteSize);
-
-        for (let a of this.actors) {
-            let pos = this.getActorWorldPosition(a);
-
-            if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
-                a.renderVisibility = true;
-                a.sprite.visible = true;
-            }
-            else {
-                a.renderVisibility = false;
-                a.sprite.visible = false;
-            }
-
-        }
-
-    }
-
-    private gameLoop = () => {
-        requestAnimationFrame(this.gameLoop);
-
-        this.centerCameraOnHero(); // TODO: Doesn't need to happen every tick?
-
-        this.updateHud();
-        this.applyLightSources();
-
-        this.renderer.render(this.stage);
     }
 }
 

@@ -11,12 +11,12 @@ class Point {
         return new Point(p1.x + p2.x, p1.y + p2.y);
     }
 
-    static Distance(p1: Point, p2: Point) : number {
+    static DistanceSquared(p1: Point, p2: Point) : number {
         return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
     }
 
-    static DistanceSquared(p1: Point, p2: Point) : number {
-        return Math.sqrt(this.Distance(p1, p2));
+    static Distance(p1: Point, p2: Point) : number {
+        return Math.sqrt(this.DistanceSquared(p1, p2));
     }
 
     Equals(p: Point) : boolean {
