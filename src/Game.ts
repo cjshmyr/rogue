@@ -19,7 +19,7 @@ class Game {
 
     // HUD
     readonly bottomHudStart: Point = new Point(16, 700);
-    buttomHudText: PIXI.Text;
+    bottomHudText: PIXI.Text;
     readonly rightHudStart: Point = new Point(600, 16);
     rightHudText: PIXI.Text;
     hudLastPressedKey: string;
@@ -87,16 +87,20 @@ class Game {
     }
 
     private setupHud() : void {
-        this.buttomHudText = new PIXI.Text('');
-        this.buttomHudText.style.fontSize = 12;
-        this.buttomHudText.style.fill = HudColor.Font;
-        this.buttomHudText.x = this.bottomHudStart.x;
-        this.buttomHudText.y = this.bottomHudStart.y;
-        this.hudContainer.addChild(this.buttomHudText);
+        this.bottomHudText = new PIXI.Text('');
+        this.bottomHudText.style.fontSize = 12;
+        this.bottomHudText.style.fill = HudColor.White;
+        this.bottomHudText.style.stroke = HudColor.Black;
+        this.bottomHudText.style.strokeThickness = 2;
+        this.bottomHudText.x = this.bottomHudStart.x;
+        this.bottomHudText.y = this.bottomHudStart.y;
+        this.hudContainer.addChild(this.bottomHudText);
 
         this.rightHudText = new PIXI.Text('');
         this.rightHudText.style.fontSize = 12;
-        this.rightHudText.style.fill = HudColor.Font;
+        this.rightHudText.style.fill = HudColor.White;
+        this.rightHudText.style.stroke = HudColor.Black;
+        this.rightHudText.style.strokeThickness = 2;
         this.rightHudText.x = this.rightHudStart.x;
         this.rightHudText.y = this.rightHudStart.y;
         this.hudContainer.addChild(this.rightHudText);
@@ -113,7 +117,7 @@ class Game {
             else
                 combatLog += '\n' + l;
         }
-        this.buttomHudText.text = combatLog;
+        this.bottomHudText.text = combatLog;
 
         this.rightHudText.text = 'Health: ' + this.hero.health
             + '\nGold: ' + this.hero.gold
@@ -453,7 +457,8 @@ enum CanvasColor {
 }
 
 enum HudColor {
-    Font = 0xffffff // White
+    Black = 0x000000,
+    White = 0xffffff
 }
 
 enum LightSourceTint {
