@@ -11,6 +11,8 @@ class Actor {
     revealed: boolean = false; // Has been revealed before
     hiddenUnderFog: boolean = false; // TODO: Should be constant
 
+    renderVisibility: boolean = false; // Is in camera bounds
+
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;
         this.location = location;

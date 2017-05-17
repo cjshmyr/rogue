@@ -6,17 +6,21 @@ window.onload = () => {
 }
 
 class Game {
-    // World
+    // Rendering
     renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
     stage: PIXI.Container;
+    worldContainer: PIXI.Container;
+    hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
-    readonly worldStart: Point = new Point(16, 16);
-    readonly worldSpriteSize: number = 16;
+
+    readonly worldSpriteSize: number = 16; // (16x16)
+    readonly worldTileWidth: number = 50; // Matches to canvas size (800)
+    readonly worldTileHeight: number = 50; // Matches to canvas size (800)
 
     // HUD
-    readonly bottomHudStart: Point = new Point(16, 500);
+    readonly bottomHudStart: Point = new Point(16, 700);
     buttomHudText: PIXI.Text;
-    readonly rightHudStart: Point = new Point(500, 16);
+    readonly rightHudStart: Point = new Point(600, 16);
     rightHudText: PIXI.Text;
     hudLastPressedKey: string;
     hudCombatLog: string[] = [];
@@ -43,8 +47,14 @@ class Game {
 
     private setupRenderer() : void {
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
-        this.renderer = PIXI.autoDetectRenderer(800, 600, { backgroundColor: HudColor.Background, view: canvas });
+        this.renderer = PIXI.autoDetectRenderer(800, 800, { backgroundColor: CanvasColor.Background, view: canvas });
         this.stage = new PIXI.Container();
+        this.worldContainer = new PIXI.Container();
+        this.hudContainer = new PIXI.Container();
+
+        this.stage.addChild(this.worldContainer);
+        this.stage.addChild(this.hudContainer);
+
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
     }
 
@@ -82,14 +92,14 @@ class Game {
         this.buttomHudText.style.fill = HudColor.Font;
         this.buttomHudText.x = this.bottomHudStart.x;
         this.buttomHudText.y = this.bottomHudStart.y;
-        this.stage.addChild(this.buttomHudText);
+        this.hudContainer.addChild(this.buttomHudText);
 
         this.rightHudText = new PIXI.Text('');
         this.rightHudText.style.fontSize = 12;
         this.rightHudText.style.fill = HudColor.Font;
         this.rightHudText.x = this.rightHudStart.x;
         this.rightHudText.y = this.rightHudStart.y;
-        this.stage.addChild(this.rightHudText);
+        this.hudContainer.addChild(this.rightHudText);
     }
 
     private updateHud() : void {
@@ -115,7 +125,7 @@ class Game {
 
     private removeActorFromWorld(a: Actor) : void {
         // Remove their sprite
-        this.stage.removeChild(a.sprite);
+        this.worldContainer.removeChild(a.sprite);
 
         // Remove them from `actors` array
         let index: number = this.actors.indexOf(a, 0);
@@ -159,6 +169,8 @@ class Game {
 
         if (allowMove) {
             this.updateActorPosition(this.hero, destination);
+
+            // this.moveCameraPosition(destination);
         }
 
         this.playerTurn = false;
@@ -216,8 +228,8 @@ class Game {
 
     private getActorWorldPosition(a: Actor) : Point { // TODO: Will need refactor with camera/animation changes.
         return new Point(
-            a.sprite.position.x = this.worldStart.x + (a.location.x * this.worldSpriteSize),
-            a.sprite.position.y = this.worldStart.y + (a.location.y * this.worldSpriteSize)
+            a.sprite.position.x = (a.location.x * this.worldSpriteSize),
+            a.sprite.position.y = (a.location.y * this.worldSpriteSize)
         );
     }
 
@@ -270,6 +282,10 @@ class Game {
 
         // Dim/shroud everything, then apply sources
         for (let a of this.actors) {
+            // Skip processing out-of-bounds actors
+            if (!a.renderVisibility)
+                continue;
+
             // Render if they're not hidden under fog
             a.sprite.visible = !a.hiddenUnderFog;
 
@@ -354,18 +370,18 @@ class Game {
             let pos = this.getActorWorldPosition(a);
             a.sprite.position.x = pos.x;
             a.sprite.position.y = pos.y;
-            this.stage.addChild(a.sprite);
+            this.worldContainer.addChild(a.sprite);
         }
 
         // Add a player at 1,1
         let sprite = new PIXI.Sprite(this.atlas['sprite350']);
-        this.hero = new Hero(sprite, new Point(1, 1));
+        this.hero = new Hero(sprite, new Point(2, 2));
         this.actors.push(this.hero);
 
-        let pos = this.getActorWorldPosition(this.hero);
-        this.hero.sprite.position.x = pos.x;
-        this.hero.sprite.position.y = pos.y;
-        this.stage.addChild(this.hero.sprite);
+        let heroPos = this.getActorWorldPosition(this.hero);
+        this.hero.sprite.position.x = heroPos.x;
+        this.hero.sprite.position.y = heroPos.y;
+        this.worldContainer.addChild(this.hero.sprite);
 
         // Add something you can pick up
         let goldSprite = new PIXI.Sprite(this.atlas['sprite250']);
@@ -375,7 +391,7 @@ class Game {
         let goldPos = this.getActorWorldPosition(gold);
         gold.sprite.position.x = goldPos.x;
         gold.sprite.position.y = goldPos.y;
-        this.stage.addChild(gold.sprite);
+        this.worldContainer.addChild(gold.sprite);
 
         // Add generic enemies
         let enemies = [new Point(25, 13), new Point(5,5), new Point(16, 28), new Point(1, 28), new Point(27,6)];
@@ -388,12 +404,41 @@ class Game {
             let npcPos = this.getActorWorldPosition(npc);
             npc.sprite.position.x = npcPos.x;
             npc.sprite.position.y = npcPos.y;
-            this.stage.addChild(npc.sprite);
+            this.worldContainer.addChild(npc.sprite);
         }
+    }
+
+    private centerCameraOnHero() : void {
+        // center on hero (not exactly center yet)
+        let heroPos = this.getActorWorldPosition(this.hero);
+        this.worldContainer.x = (this.renderer.width / 2) - heroPos.x;
+        this.worldContainer.y = (this.renderer.height / 2) - heroPos.y;
+
+        // don't render things outside of viewport
+        let topLeft = heroPos.x - ((this.worldTileWidth / 2) * this.worldSpriteSize);
+        let topRight = heroPos.x + ((this.worldTileWidth / 2) * this.worldSpriteSize);
+        let bottomLeft = heroPos.y - ((this.worldTileHeight / 2) * this.worldSpriteSize);
+
+        for (let a of this.actors) {
+            let pos = this.getActorWorldPosition(a);
+
+            if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
+                a.renderVisibility = true;
+                a.sprite.visible = true;
+            }
+            else {
+                a.renderVisibility = false;
+                a.sprite.visible = false;
+            }
+
+        }
+
     }
 
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
+
+        this.centerCameraOnHero(); // TODO: Doesn't need to happen every tick?
 
         this.updateHud();
         this.applyLightSources();
@@ -402,8 +447,12 @@ class Game {
     }
 }
 
+// TODO: A debug mode to change the HudColor.Background
+enum CanvasColor {
+    Background = 0x000000 // Black. (used to be 0x606060 - Grey)
+}
+
 enum HudColor {
-    Background = 0x606060, // Grey
     Font = 0xffffff // White
 }
 
