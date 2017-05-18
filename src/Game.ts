@@ -428,10 +428,7 @@ class Game {
     }
 
     private getLightSourceIntensity(distance: number, maxDistance: number) : LightSourceTint {
-        // TODO: Move magic number into normal circle algs.
-        // Magic number, used to round our circles out more evenly.
-        let magic = 0.9;
-        let i = (distance * magic) / maxDistance
+        let i = distance / maxDistance
 
         if (i <= 0.30) return LightSourceTint.Visible1;
         if (i <= 0.50) return LightSourceTint.Visible2;
@@ -480,36 +477,36 @@ class Game {
     private addTestMap() : void {
         // Sample map
         let map = [
-            "##############################",
-            "#               #        #   #",
-            "#          e    #        #   #",
-            "#               #            #",
-            "#      #        #            #",
-            "#      #        #            #",
-            "# #  # #        #        # e #",
-            "# #    #        #        #   #",
-            "# #    #        #    ###### ##",
-            "#      #    p                #",
-            "#      #                     #",
-            "#      ##########         ####",
-            "#      ##########            #",
-            "#                            #",
-            "# e    ##########gg          #",
-            "#      ##########ggg         #",
-            "#      ###############       #",
-            "#                            #",
-            "#       #    #      #        #",
-            "#                            #",
-            "######### ########  e        #",
-            "######### ########           #",
-            "#  ggggg  ########           #",
-            "# ################          ##",
-            "# ##############           ###",
-            "# #############           ####",
-            "# gg  ########          ######",
-            "##### ########        ########",
-            "#  e                 #########",
-            "##############################",
+            "############################################################",
+            "#               #        #   #                             #",
+            "#          e    #        #   #                             #",
+            "#               #                                          #",
+            "#      #        #            #                             #",
+            "#      #        #            #                             #",
+            "# #  # #        #        # e #                             #",
+            "# #    #        #        #   #                             #",
+            "# #    #        #    ###### ##                             #",
+            "#      #                     #                             #",
+            "#      #                     #                             #",
+            "#      ##########         ####                             #",
+            "#      ##########     g      #                             #",
+            "#                    ggg                                   #",
+            "# e    ##########     g                     p              #",
+            "#      ##########            #                             #",
+            "#      ###############       #                             #",
+            "#                            #                             #",
+            "#       #    #      #        #                             #",
+            "#                            #                             #",
+            "######### ########  e        #                             #",
+            "######### ########           #                             #",
+            "#  ggggg  ########           #                             #",
+            "# ################          ##                             #",
+            "# ##############           ###                             #",
+            "# #############           ####                             #",
+            "# gg  ########          ######                             #",
+            "##### ########        ########                             #",
+            "#  e                 #########                             #",
+            "############################################################",
         ];
 
         this.actors = [];
@@ -633,6 +630,6 @@ enum LightSourceTint {
     Visible5 = 0xcccccc, // 80%
     Visible6 = 0xbfbfbf, // 75%
     Visible7 = 0xb3b3b3, // 70%
-    Fog = 0xa6a6a6, // Grey (dimmed) - 65% darkness
+    Fog = 0x999999, // Grey (dimmed) - 60% darkness
     Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
