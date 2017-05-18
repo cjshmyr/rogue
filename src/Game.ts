@@ -85,6 +85,8 @@ class Game {
 
                 if (movement != null) {
                     this.doHeroAction(movement);
+
+                    event.preventDefault(); // stop browser scrolling
                 }
             }
         });
@@ -260,7 +262,7 @@ class Game {
         return actorsInPoints;
     }
 
-    private pointsInBox(center: Point, range: number = 0) : Point[] {
+    private pointsInBox(center: Point, range: number) : Point[] {
         let points: Point[] = [];
 
         for (let y = center.y - range; y <= center.y + range; y++) {
@@ -272,7 +274,7 @@ class Game {
         return points;
     }
 
-    private pointsInCircle(center: Point, range: number = 0) : Point[] {
+    private pointsInCircle(center: Point, range: number) : Point[] {
         let pointsInBox = this.pointsInBox(center, range);
         let points: Point[] = [];
 
@@ -285,7 +287,7 @@ class Game {
         return points;
     }
 
-    private pointsInAnnulus(center: Point, range: number = 0, thickness: number = 1) : Point[] {
+    private pointsInAnnulus(center: Point, range: number, thickness: number = 1) : Point[] {
         let points: Point[] = [];
 
         // Hacky -- eventually replace with Midpoint algorithm
@@ -310,13 +312,13 @@ class Game {
         return points;
     }
 
-    private pointsInLine(p1z: Point, p2z: Point) : Point[] {
+    private pointsInLine(start: Point, end: Point) : Point[] {
         // Bresenham line algorithm (integer)
         // Taken from JS example @ http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
         let points: Point[] = [];
 
-        let p1 = new Point(p1z.x, p1z.y);
-        let p2 = new Point(p2z.x, p2z.y);
+        let p1 = new Point(start.x, start.y);
+        let p2 = new Point(end.x, end.y);
 
         let steep = Math.abs(p2.y - p1.y) > Math.abs(p2.x - p1.x);
         if (steep){
