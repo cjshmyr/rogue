@@ -41,6 +41,10 @@ class Game {
         // Load a test map
         this.addTestMap();
 
+        // Set camera/lighting (tasks occur after each turn)
+        this.centerCameraOnHero();
+        this.applyLightSources();
+
         // Start the game
         this.gameLoop();
     }
@@ -173,12 +177,13 @@ class Game {
 
         if (allowMove) {
             this.updateActorPosition(this.hero, destination);
-
-            // this.moveCameraPosition(destination);
         }
 
         this.playerTurn = false;
         this.doNpcActions();
+
+        this.centerCameraOnHero();
+        this.applyLightSources();
     }
 
     private doNpcActions() : void {
@@ -406,18 +411,6 @@ class Game {
                 }
              }
         }
-
-        /*
-        // Hacky: assumes hero's the only source
-        let nearbyPoints = this.pointsInCircle(this.hero.location, this.hero.lightSourceRange);
-        let nearbyActors = this.findActorsAtPoints(nearbyPoints);
-
-        for (let a of nearbyActors) {
-            a.sprite.tint = LightSourceTint.Visible;
-            a.sprite.visible = true;
-            a.revealed = true;
-        }
-        */
     }
 
     private centerCameraOnHero() : void {
@@ -450,10 +443,7 @@ class Game {
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
 
-        this.centerCameraOnHero(); // TODO: Doesn't need to happen every tick?
-
         this.updateHud();
-        this.applyLightSources();
 
         this.renderer.render(this.stage);
     }
