@@ -430,13 +430,12 @@ class Game {
     private getLightSourceIntensity(distance: number, maxDistance: number) : LightSourceTint {
         let i = distance / maxDistance
 
-        if (i <= 0.30) return LightSourceTint.Visible1;
-        if (i <= 0.50) return LightSourceTint.Visible2;
-        if (i <= 0.70) return LightSourceTint.Visible3;
-        if (i <= 0.80) return LightSourceTint.Visible4;
-        if (i <= 0.90) return LightSourceTint.Visible5;
-        if (i <= 0.95) return LightSourceTint.Visible6;
-        else return LightSourceTint.Visible7;
+        if (i <= 0.75) return LightSourceTint.Visible1;
+        if (i <= 0.80) return LightSourceTint.Visible2;
+        if (i <= 0.85) return LightSourceTint.Visible3;
+        if (i <= 0.90) return LightSourceTint.Visible4;
+        if (i <= 0.95) return LightSourceTint.Visible5;
+        else return LightSourceTint.Visible6;
     }
 
     private centerCameraOnHero() : void {
@@ -629,7 +628,6 @@ enum LightSourceTint {
     Visible4 = 0xd9d9d9, // 85%
     Visible5 = 0xcccccc, // 80%
     Visible6 = 0xbfbfbf, // 75%
-    Visible7 = 0xb3b3b3, // 70%
     Fog = 0x999999, // Grey (dimmed) - 60% darkness
     Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
