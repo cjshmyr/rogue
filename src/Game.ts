@@ -2,6 +2,9 @@ window.onload = () => {
     // Load things, start game
     PIXI.loader
         .add('core/art/sprites.json')
+        // .add('core/art/creatures.json') // EXPERIMENTAL
+        // .add('core/art/items.json')
+        // .add('core/art/tiles.json')
         .load(() => { let game = new Game(); })
 }
 
@@ -12,6 +15,9 @@ class Game {
     worldContainer: PIXI.Container;
     hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
+    // creatureAtlas: PIXI.loaders.TextureDictionary; // EXPERIMENTAL
+    // itemAtlas: PIXI.loaders.TextureDictionary;
+    // tileAtlas: PIXI.loaders.TextureDictionary;
 
     readonly worldSpriteSize: number = 16; // (16x16)
     readonly worldTileWidth: number = 50; // Matches to canvas size (800)
@@ -22,8 +28,8 @@ class Game {
     bottomHudText: PIXI.Text;
     readonly rightHudStart: Point = new Point(600, 16);
     rightHudText: PIXI.Text;
-    hudLastPressedKey: string;
     hudCombatLog: string[] = [];
+    hudLastPressedKey: string;
 
     // Game
     actors: Actor[]; // TODO: Should we initialize this as an empty array?
@@ -60,6 +66,9 @@ class Game {
         this.stage.addChild(this.hudContainer);
 
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
+        // this.creatureAtlas = PIXI.loader.resources['core/art/creatures.json'].textures; // EXPERIMENTAL
+        // this.itemAtlas = PIXI.loader.resources['core/art/items.json'].textures;
+        // this.tileAtlas = PIXI.loader.resources['core/art/tiles.json'].textures;
     }
 
     private setupEvents() : void {
@@ -178,7 +187,7 @@ class Game {
         }
 
         if (allowMove) {
-            this.updateActorPosition(this.hero, destination);
+            this.setActorPosition(this.hero, destination);
         }
 
         this.playerTurn = false;
@@ -226,11 +235,11 @@ class Game {
         }
 
         if (allowMove) {
-            this.updateActorPosition(npc, destination);
+            this.setActorPosition(npc, destination);
         }
     }
 
-    private updateActorPosition(a: Actor, destination: Point) : void {
+    private setActorPosition(a: Actor, destination: Point) : void {
         a.location = destination;
         let pos = this.getActorWorldPosition(a);
         a.sprite.x = pos.x;
@@ -455,103 +464,136 @@ class Game {
         let map = [
             "##############################",
             "#               #        #   #",
-            "#               #        #   #",
+            "#          e    #        #   #",
             "#               #            #",
             "#      #        #            #",
             "#      #        #            #",
-            "# #  # #        #        #   #",
+            "# #  # #        #        # e #",
             "# #    #        #        #   #",
             "# #    #        #    ###### ##",
-            "#      #                     #",
+            "#      #    p                #",
             "#      #                     #",
             "#      ##########         ####",
             "#      ##########            #",
-            "#      ##########            #",
-            "#      ##########            #",
-            "#      ##########            #",
+            "#                            #",
+            "# e    ##########gg          #",
+            "#      ##########ggg         #",
             "#      ###############       #",
             "#                            #",
             "#       #    #      #        #",
             "#                            #",
+            "######### ########  e        #",
             "######### ########           #",
-            "######### ########           #",
-            "#         ########           #",
+            "#  ggggg  ########           #",
             "# ################          ##",
             "# ##############           ###",
             "# #############           ####",
-            "#     ########          ######",
+            "# gg  ########          ######",
             "##### ########        ########",
-            "#                    #########",
+            "#  e                 #########",
             "##############################",
         ];
 
         this.actors = [];
 
+        let floor: Point[] = [];
+        let walls: Point[] = [];
+        let enemies: Point[] = [];
+        let gold: Point[] = [];
+
         for (let y = 0; y < map.length; y++) {
             for (let x = 0; x < map[y].length; x++) {
-
                 let tile = map[y][x];
                 let location = new Point(x, y);
 
-                let a = <Actor> null;
-
-                if (tile == '#') {
-                    let sprite = new PIXI.Sprite(this.atlas['sprite172']);
-                    a = new Wall(sprite, location);
+                if (tile == 'p') {
+                    let sprite = new PIXI.Sprite(this.atlas['sprite350']);
+                    // let sprite = new PIXI.Sprite(this.creatureAtlas['sprite3']); // EXPERIMENTAL
+                    this.hero = new Hero(sprite, location);
+                    this.setActorPosition(this.hero, location);
+                    this.actors.push(this.hero);
+                }
+                else if (tile == '#') {
+                    walls.push(location);
                 }
                 else if (tile == ' ') {
-                    let sprite = new PIXI.Sprite(this.atlas['sprite210']);
-                    a = new Floor(sprite, location);
+                    // floors are added regardless; do nothing, but don't throw an error
+                }
+                else if (tile == 'g') {
+                    gold.push(location);
+                }
+                else if (tile == 'e') {
+                    enemies.push(location);
                 }
                 else {
-                    alert('loadMap: Unknown actor type');
+                    alert('loadMap: Unknown actor type: ' + tile);
+                    return;
                 }
 
-                this.actors.push(a)
+                floor.push(location);
             }
         }
 
-        // Add them to the stage as well.
-        for (let a of this.actors) {
-            let pos = this.getActorWorldPosition(a);
-            a.sprite.position.x = pos.x;
-            a.sprite.position.y = pos.y;
+        for (let p of floor) {
+            let sprite = new PIXI.Sprite(this.atlas['sprite210']);
+
+            /*
+            let spriteNumbers = [15,16,21,22]; // EXPERIMENTAL
+            let rand = Math.floor((Math.random() * 4));
+            let spriteName = 'sprite' + spriteNumbers[rand];
+            let sprite = new PIXI.Sprite(this.tileAtlas[spriteName]);
+            */
+
+            let a = new Floor(sprite, p);
+            this.setActorPosition(a, p);
+            this.actors.push(a);
+
             this.worldContainer.addChild(a.sprite);
         }
 
-        // Add a player at 1,1
-        let sprite = new PIXI.Sprite(this.atlas['sprite350']);
-        this.hero = new Hero(sprite, new Point(2, 2));
-        this.actors.push(this.hero);
+        for (let p of walls) {
+            let sprite = new PIXI.Sprite(this.atlas['sprite172']);
 
-        let heroPos = this.getActorWorldPosition(this.hero);
-        this.hero.sprite.position.x = heroPos.x;
-        this.hero.sprite.position.y = heroPos.y;
-        this.worldContainer.addChild(this.hero.sprite);
+            /*
+            // check if wall below
+            let spriteName = 'sprite25'; // EXPERIMENTAL
+            var below = Point.Subtract(p, new Point(0, -1));
+            for (let q of walls) {
+                if (q.Equals(below)) {
+                    spriteName = 'sprite8';
+                }
+            }
+            let sprite = new PIXI.Sprite(this.tileAtlas[spriteName]);
+            */
 
-        // Add something you can pick up
-        let goldSprite = new PIXI.Sprite(this.atlas['sprite250']);
-        let gold = new Gold(goldSprite, new Point(3, 1));
-        this.actors.push(gold);
+            let a = new Wall(sprite, p);
+            this.setActorPosition(a, p);
+            this.actors.push(a);
 
-        let goldPos = this.getActorWorldPosition(gold);
-        gold.sprite.position.x = goldPos.x;
-        gold.sprite.position.y = goldPos.y;
-        this.worldContainer.addChild(gold.sprite);
-
-        // Add generic enemies
-        let enemies = [new Point(25, 13), new Point(5,5), new Point(16, 28), new Point(1, 28), new Point(27,6)];
-        for (let e of enemies)
-        {
-            let npcSprite = new PIXI.Sprite(this.atlas['sprite378']);
-            let npc = new Npc(npcSprite, e);
-            this.actors.push(npc);
-
-            let npcPos = this.getActorWorldPosition(npc);
-            npc.sprite.position.x = npcPos.x;
-            npc.sprite.position.y = npcPos.y;
-            this.worldContainer.addChild(npc.sprite);
+            this.worldContainer.addChild(a.sprite);
         }
+
+        for (let p of gold) {
+            let sprite = new PIXI.Sprite(this.atlas['sprite250']);
+            // let sprite = new PIXI.Sprite(this.itemAtlas['sprite48']); // EXPERIMENTAL
+            let a = new Gold(sprite, p);
+            this.setActorPosition(a, p);
+            this.actors.push(a);
+
+            this.worldContainer.addChild(a.sprite);
+        }
+
+        for (let p of enemies) {
+            let sprite = new PIXI.Sprite(this.atlas['sprite378']);
+            // let sprite = new PIXI.Sprite(this.creatureAtlas['sprite46']); // EXPERIMENTAL
+            let a = new Npc(sprite, p);
+            this.setActorPosition(a, p);
+            this.actors.push(a);
+
+            this.worldContainer.addChild(a.sprite);
+        }
+
+        this.worldContainer.addChild(this.hero.sprite);
     }
 }
 
