@@ -322,48 +322,25 @@ class Game {
     }
 
     private pointsInLine(start: Point, end: Point) : Point[] {
-        // Bresenham line algorithm (integer)
-        // Taken from JS example @ http://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+        // Taken from http://stackoverflow.com/questions/4672279/bresenham-algorithm-in-javascript
         let points: Point[] = [];
 
         let p1 = new Point(start.x, start.y);
         let p2 = new Point(end.x, end.y);
 
-        let steep = Math.abs(p2.y - p1.y) > Math.abs(p2.x - p1.x);
-        if (steep){
-            let tmp;
-            //swap p1.x, p1.y
-            tmp = p1.x;
-            p1.x = p1.y;
-            p1.y = tmp;
-            //swap p2.x, p2.y
-            tmp = p2.x;
-            p2.x = p2.y;
-            p2.y = tmp;
-        }
-
-        let sign = 1;
-        if (p1.x > p2.x) {
-            sign = -1;
-            p1.x *= -1;
-            p2.x *= -1;
-        }
-
-        let dx = p2.x - p1.x;
+        let dx = Math.abs(p2.x - p1.x);
         let dy = Math.abs(p2.y - p1.y);
-        let err = ((dx / 2));
-        let ystep = p1.y < p2.y ? 1 : -1;
-        let y = p1.y;
+        let sx = (p1.x < p2.x) ? 1 : -1;
+        let sy = (p1.y < p2.y) ? 1 : -1;
+        let err = dx-dy;
 
-        for (var x = p1.x; x <= p2.x; x++) {
-            if(!(steep ? points.push(new Point(y, sign*x)) : points.push(new Point(sign * x, y)))) {
-                return;
-            }
-            err = (err - dy);
-            if (err < 0) {
-                y += ystep;
-                err += dx;
-            }
+        while (true) {
+            points.push(new Point(p1.x, p1.y));  // Do what you need to for this
+
+            if (p1.Equals(p2)) break;
+            let e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; p1.x += sx; }
+            if (e2 < dx) { err += dx; p1.y += sy; }
         }
 
         return points;
