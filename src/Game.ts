@@ -29,7 +29,7 @@ class Game {
     readonly rightHudStart: Point = new Point(600, 16);
     rightHudText: PIXI.Text;
     hudCombatLog: string[] = [];
-    hudLastPressedKey: string;
+    hudLastKeyPressed: string;
 
     // Game
     actors: Actor[]; // TODO: Should we initialize this as an empty array?
@@ -73,8 +73,7 @@ class Game {
 
     private setupEvents() : void {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
-            console.log('pressed: ' + event.keyCode);
-            this.hudLastPressedKey = event.key;
+            this.hudLastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
             if (this.playerTurn) {
                 let movement: Point;
@@ -137,7 +136,7 @@ class Game {
         this.rightHudText.text = 'Health: ' + this.hero.health
             + '\nGold: ' + this.hero.gold
             + '\n\n-- debug --'
-            + '\nLast key pressed: ' + this.hudLastPressedKey
+            + '\nLast key: ' + this.hudLastKeyPressed
             + '\nHero position (x,y): ' + this.hero.location.x + ',' + this.hero.location.y
             + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai');
     }
