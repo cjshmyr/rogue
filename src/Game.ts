@@ -288,7 +288,7 @@ class Game {
         let points: Point[] = [];
 
         for (let p of pointsInBox) {
-            if (Point.Distance(center, p) <= range) {
+            if (Point.DistanceSquared(center, p) <= range * range) {
                 points.push(p);
             }
         }
