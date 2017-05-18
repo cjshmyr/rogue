@@ -400,8 +400,8 @@ class Game {
         }
 
         // Dynamic lighting (TODO: Preferrably using an annulus, but circle looks good)
-        for (let p of this.pointsInCircle(this.hero.location, this.hero.lightSourceRange)) {
-             let line = this.pointsInLine(this.hero.location, p);
+        for (let circlePoint of this.pointsInCircle(this.hero.location, this.hero.lightSourceRange)) {
+             let line = this.pointsInLine(this.hero.location, circlePoint);
 
              let obstructing = false;
              // Begin from light source origin
@@ -415,13 +415,31 @@ class Game {
                         obstructing = true;
                     }
 
+                    let distance = Point.Distance(this.hero.location, point);
+                    let intensity = this.getLightSourceIntensity(distance, this.hero.lightSourceRange);
+
                     // We don't want to block the object itself from being lit, just ones after it.
-                    a.sprite.tint = LightSourceTint.Visible;
+                    a.sprite.tint = intensity;
                     a.sprite.visible = true;
                     a.revealed = true;
                 }
-             }
+            }
         }
+    }
+
+    private getLightSourceIntensity(distance: number, maxDistance: number) : LightSourceTint {
+        // TODO: Move magic number into normal circle algs.
+        // Magic number, used to round our circles out more evenly.
+        let magic = 0.9;
+        let i = (distance * magic) / maxDistance
+
+        if (i <= 0.30) return LightSourceTint.Visible1;
+        if (i <= 0.50) return LightSourceTint.Visible2;
+        if (i <= 0.70) return LightSourceTint.Visible3;
+        if (i <= 0.80) return LightSourceTint.Visible4;
+        if (i <= 0.90) return LightSourceTint.Visible5;
+        if (i <= 0.95) return LightSourceTint.Visible6;
+        else return LightSourceTint.Visible7;
     }
 
     private centerCameraOnHero() : void {
@@ -608,7 +626,13 @@ enum HudColor {
 }
 
 enum LightSourceTint {
-    Visible = 0xffffff, // None
+    Visible1 = 0xffffff, // None
+    Visible2 = 0xf2f2f2, // 95%
+    Visible3 = 0xe6e6e6, // 90%
+    Visible4 = 0xd9d9d9, // 85%
+    Visible5 = 0xcccccc, // 80%
+    Visible6 = 0xbfbfbf, // 75%
+    Visible7 = 0xb3b3b3, // 70%
     Fog = 0xa6a6a6, // Grey (dimmed) - 65% darkness
     Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
