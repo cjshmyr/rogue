@@ -1,18 +1,22 @@
 class Actor {
-    sprite: PIXI.Sprite;
-
     location: Point;
     health: number = 0;
     damage: number = 0;
     gold: number = 0;
     name: string =  'undefined';
 
-    lightSourceRange: number = 0;
-    revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)
-    hiddenUnderFog: boolean = false; // Is this hidden under fog TODO: Should be constant
-    blocksLight: boolean = false; // Blocks light sources
-
+    // Rendering
     renderVisibility: boolean = false; // Is in camera bounds
+    sprite: PIXI.Sprite;
+
+    // Vision
+    revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
+    lightSourceRange: number = 0; // How much light it gives off?
+    hiddenUnderFog: boolean = false; // Is this hidden under fog?
+    blocksLight: boolean = false; // Does it block light sources?
+
+    // Collision
+    blocksMovement: boolean = false; // Does it block movement?
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;
@@ -33,6 +37,7 @@ class Hero extends Actor {
     damage: number = 3;
     name: string = 'Hero';
     lightSourceRange: number = 10;
+    blocksMovement: boolean = true;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
@@ -44,6 +49,7 @@ class Npc extends Actor {
     damage: number = 2;
     name: string = 'Monster';
     hiddenUnderFog: boolean = true;
+    blocksMovement: boolean = true;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);
@@ -58,6 +64,7 @@ class Floor extends Actor {
 
 class Wall extends Actor {
     blocksLight: boolean = true;
+    blocksMovement: boolean = true;
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         super(sprite, location);

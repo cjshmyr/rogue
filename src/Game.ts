@@ -20,8 +20,8 @@ class Game {
     // tileAtlas: PIXI.loaders.TextureDictionary;
 
     readonly worldSpriteSize: number = 16; // (16x16)
-    readonly worldTileWidth: number = 50; // Matches to canvas size (800)
-    readonly worldTileHeight: number = 50; // Matches to canvas size (800)
+    readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
+    readonly worldTileDisplayHeight: number = 50; // Matches to canvas size (800)
 
     // HUD
     readonly bottomHudStart: Point = new Point(16, 700);
@@ -35,6 +35,8 @@ class Game {
     actors: Actor[]; // TODO: Should we initialize this as an empty array?
     hero: Hero;
     playerTurn: boolean = true;
+
+    collisionLayer: CellLayer;
 
     constructor() {
         // Setup
@@ -138,7 +140,9 @@ class Game {
             + '\n\n-- debug --'
             + '\nLast key: ' + this.hudLastKeyPressed
             + '\nHero position (x,y): ' + this.hero.location.x + ',' + this.hero.location.y
-            + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai');
+            + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai')
+            + '\n\n-- layers --'
+            + '\nCollision: ' + this.collisionLayer.usedCount + '/' + this.collisionLayer.count;
     }
 
     private removeActorFromWorld(a: Actor) : void {
@@ -375,9 +379,9 @@ class Game {
             a.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
-        // Dynamic lighting (TODO: Preferrably using an annulus, but circle looks good)
-        for (let circlePoint of this.pointsInCircle(this.hero.location, this.hero.lightSourceRange)) {
-             let line = this.pointsInLine(this.hero.location, circlePoint);
+        // Dynamic lighting (origin to annulus)
+        for (let p of this.pointsInAnnulus(this.hero.location, this.hero.lightSourceRange)) {
+             let line = this.pointsInLine(this.hero.location, p);
 
              let obstructing = false;
              // Begin from light source origin
@@ -421,9 +425,9 @@ class Game {
         this.worldContainer.y = (this.renderer.height / 2) - heroPos.y;
 
         // don't render things outside of viewport
-        let topLeft = heroPos.x - ((this.worldTileWidth / 2) * this.worldSpriteSize);
-        let topRight = heroPos.x + ((this.worldTileWidth / 2) * this.worldSpriteSize);
-        let bottomLeft = heroPos.y - ((this.worldTileHeight / 2) * this.worldSpriteSize);
+        let topLeft = heroPos.x - ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
+        let topRight = heroPos.x + ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
+        let bottomLeft = heroPos.y - ((this.worldTileDisplayHeight / 2) * this.worldSpriteSize);
 
         for (let a of this.actors) {
             let pos = this.getActorWorldPosition(a);
@@ -444,7 +448,7 @@ class Game {
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
 
-        this.updateHud();
+        this.updateHud(); // 518: move to out of loop
 
         this.renderer.render(this.stage);
     }
@@ -483,6 +487,8 @@ class Game {
             "#  e                 #########                             #",
             "############################################################",
         ];
+
+        this.collisionLayer = new CellLayer(map[0].length, map.length); // Assumes we have no varying size (purely square/rectangle)
 
         this.actors = [];
 
@@ -561,6 +567,8 @@ class Game {
             this.actors.push(a);
 
             this.worldContainer.addChild(a.sprite);
+
+            this.collisionLayer.addActor(p.x, p.y, a);
         }
 
         for (let p of gold) {
