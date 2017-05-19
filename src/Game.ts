@@ -32,11 +32,10 @@ class Game {
     hudLastKeyPressed: string;
 
     // Game
-    actors: Actor[]; // TODO: Should we initialize this as an empty array?
+    actorLayer: CellLayer;
+    collisionLayer: CellLayer;
     hero: Hero;
     playerTurn: boolean = true;
-
-    collisionLayer: CellLayer;
 
     constructor() {
         // Setup
@@ -139,26 +138,16 @@ class Game {
             + '\nGold: ' + this.hero.gold
             + '\n\n-- debug --'
             + '\nLast key: ' + this.hudLastKeyPressed
-            + '\nHero position (x,y): ' + this.hero.location.x + ',' + this.hero.location.y
+            + '\nHero position (x,y): ' + this.hero.position.x + ',' + this.hero.position.y
             + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai')
             + '\n\n-- layers --'
-            + '\nCollision: ' + this.collisionLayer.usedCount + '/' + this.collisionLayer.count;
-    }
-
-    private removeActorFromWorld(a: Actor) : void {
-        // Remove their sprite
-        this.worldContainer.removeChild(a.sprite);
-
-        // Remove them from `actors` array
-        let index: number = this.actors.indexOf(a, 0);
-        if (index > -1) {
-            this.actors.splice(index, 1);
-        }
+            + '\nActors: ' + this.actorLayer.actorCount + '/' + this.actorLayer.count
+            + '\nCollision: ' + this.collisionLayer.actorCount + '/' + this.collisionLayer.count
     }
 
     private doHeroAction(movement: Point) : void {
-        let destination = Point.Add(this.hero.location, movement);
-        let actorsAtDest: Actor[] = this.findActorsAtPoint(destination);
+        let destination = Point.Add(this.hero.position, movement);
+        let actorsAtDest: Actor[] = this.getActorsAtPoint(destination);
 
         let allowMove: boolean = true;
         for (let a of actorsAtDest) {
@@ -190,7 +179,7 @@ class Game {
         }
 
         if (allowMove) {
-            this.setActorPosition(this.hero, destination);
+            this.updateActorPosition(this.hero, destination);
         }
 
         this.playerTurn = false;
@@ -201,7 +190,7 @@ class Game {
     }
 
     private doNpcActions() : void {
-        for (let a of this.actors) {
+        for (let a of this.actorLayer.getActors()) {
             if (a instanceof Npc) {
                 this.doNpcAction(a);
             }
@@ -213,8 +202,8 @@ class Game {
     private doNpcAction(npc: Npc) {
         // TODO: Attempt to move towards player
         // This is insanely stupid.
-        let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.location, this.hero.location);
-        let actorsAtDest = this.findActorsAtPoint(destination);
+        let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
+        let actorsAtDest = this.getActorsAtPoint(destination);
 
         let allowMove: boolean = true;
         for (let a of actorsAtDest) {
@@ -238,136 +227,88 @@ class Game {
         }
 
         if (allowMove) {
-            this.setActorPosition(npc, destination);
+            this.updateActorPosition(npc, destination);
         }
     }
 
-    private setActorPosition(a: Actor, destination: Point) : void {
-        a.location = destination;
-        let pos = this.getActorWorldPosition(a);
-        a.sprite.x = pos.x;
-        a.sprite.y = pos.y;
+    private addActorToWorld(a: Actor) : void {
+        let initPosition = a.position;
+
+        // Add to actor layer
+        this.actorLayer.addActor(a, initPosition.x, initPosition.y);
+
+        // Add to collision layer if appropriate
+        if (a.blocksMovement) {
+            this.collisionLayer.addActor(a, initPosition.x, initPosition.y);
+        }
+
+        // Add their sprite
+        this.worldContainer.addChild(a.sprite);
+
+        // Update the sprite's render position
+        this.updateSpriteRenderPosition(a)
     }
 
-    private getActorWorldPosition(a: Actor) : Point { // TODO: Will need refactor with camera/animation changes.
-        return new Point(
-            a.sprite.position.x = (a.location.x * this.worldSpriteSize),
-            a.sprite.position.y = (a.location.y * this.worldSpriteSize)
-        );
+    private updateActorPosition(a: Actor, newPosition: Point) : void {
+        // Update the actor map position
+        this.actorLayer.moveActor(a, newPosition.x, newPosition.y);
+
+        // Move in collision layer if appropriate
+        if (a.blocksMovement) {
+            this.collisionLayer.moveActor(a, newPosition.x, newPosition.y);
+        }
+
+        // Update the hero's grid location
+        a.position = newPosition;
+
+        // Update the sprite's render position
+        this.updateSpriteRenderPosition(a)
     }
 
-    private findActorsAtPoint(p: Point) : Actor[] {
-        return this.findActorsAtPoints([p]);
+    private removeActorFromWorld(a: Actor) : void {
+        // Remove from actor layer
+        this.actorLayer.removeActor(a, a.position.x, a.position.y);
+
+        // Remove from collision layer if appropriate
+        if (a.blocksMovement) {
+            this.collisionLayer.removeActor(a, a.position.x, a.position.y);
+        }
+
+        // Remove their sprite
+        this.worldContainer.removeChild(a.sprite);
     }
 
-    private findActorsAtPoints(points: Point[]) : Actor[] {
+    private updateSpriteRenderPosition(a: Actor) : void { // TODO: Will need refactor with camera/animation changes.
+        let p = this.getSpriteRenderPosition(a);
+        a.sprite.x = p.x;
+        a.sprite.y = p.y;
+    }
+
+    private getSpriteRenderPosition(a: Actor) : Point {
+        let rX = a.position.x * this.worldSpriteSize;
+        let rY = a.position.y * this.worldSpriteSize;
+        return new Point(rX, rY);
+    }
+
+    private getActorsAtPoint(p: Point) : Actor[] {
+        return this.getActorsAtPoints([p]);
+    }
+
+    private getActorsAtPoints(points: Point[]) : Actor[] {
         let actorsInPoints: Actor[] = [];
 
-        for (let a of this.actors) {
-            for (let p of points) {
-                if (a.location.Equals(p)) {
-                    actorsInPoints.push(a);
-                }
+        for (let p of points) {
+            for (let a of this.actorLayer.actorsAt(p.x, p.y)) {
+                actorsInPoints.push(a);
             }
         }
 
         return actorsInPoints;
     }
 
-    private pointsInBox(center: Point, range: number) : Point[] {
-        let points: Point[] = [];
-
-        for (let y = center.y - range; y <= center.y + range; y++) {
-            for (let x = center.x - range; x <= center.x + range; x++) {
-                points.push(new Point(x,y));
-            }
-        }
-
-        return points;
-    }
-
-    private pointsInCircle(center: Point, range: number) : Point[] {
-        let pointsInBox = this.pointsInBox(center, range);
-        let points: Point[] = [];
-
-        for (let p of pointsInBox) {
-            if (Point.DistanceSquared(center, p) <= range * range) {
-                points.push(p);
-            }
-        }
-
-        return points;
-    }
-
-    private pointsInAnnulus(center: Point, range: number, thickness: number = 1) : Point[] {
-        let points: Point[] = [];
-
-        // Hacky -- eventually replace with Midpoint algorithm
-        let pointsInCircle = this.pointsInCircle(center, range);
-        let pointsInInnerCircle = this.pointsInCircle(center, range - thickness);
-
-        for (let p of pointsInCircle) {
-            let isInInnerCircle = false;
-
-            for (let q of pointsInInnerCircle) {
-                if (p.Equals(q)) {
-                    isInInnerCircle = true;
-                    break;
-                }
-            }
-
-            if (!isInInnerCircle) {
-                points.push(p);
-            }
-        }
-
-        return points;
-    }
-
-    private pointsInLine(start: Point, end: Point) : Point[] {
-        // Taken from http://stackoverflow.com/questions/4672279/bresenham-algorithm-in-javascript
-        let points: Point[] = [];
-
-        let p1 = new Point(start.x, start.y);
-        let p2 = new Point(end.x, end.y);
-
-        let dx = Math.abs(p2.x - p1.x);
-        let dy = Math.abs(p2.y - p1.y);
-        let sx = (p1.x < p2.x) ? 1 : -1;
-        let sy = (p1.y < p2.y) ? 1 : -1;
-        let err = dx-dy;
-
-        while (true) {
-            points.push(new Point(p1.x, p1.y));  // Do what you need to for this
-
-            if (p1.Equals(p2)) break;
-            let e2 = 2 * err;
-            if (e2 > -dy) { err -= dy; p1.x += sx; }
-            if (e2 < dx) { err += dx; p1.y += sy; }
-        }
-
-        return points;
-    }
-
-    private debug_listPoints(points: Point[]) : string {
-        let debugMe = '';
-
-        for (let p of points) {
-            if (debugMe == '')
-                debugMe = '(' + p.x + ',' + p.y + ')'
-            else
-                debugMe += ',(' + p.x + ',' + p.y + ')'
-        }
-
-        return debugMe;
-    }
-
     private applyLightSources() : void {
-        if (this.actors == null)
-            return;
-
         // Dim/shroud everything, then apply sources
-        for (let a of this.actors) {
+        for (let a of this.actorLayer.getActors()) {
             // Skip processing out-of-bounds actors
             if (!a.renderVisibility)
                 continue;
@@ -380,23 +321,27 @@ class Game {
         }
 
         // Dynamic lighting (origin to annulus)
-        for (let p of this.pointsInAnnulus(this.hero.location, this.hero.lightSourceRange)) {
-             let line = this.pointsInLine(this.hero.location, p);
+        for (let annulusPoint of Geometry.pointsInAnnulus(this.hero.position, this.hero.lightSourceRange)) {
+             let line = Geometry.pointsInLine(this.hero.position, annulusPoint);
 
              let obstructing = false;
              // Begin from light source origin
-             for (let point of line) {
+             for (let linePoint of line) {
 
                 if (obstructing)
                     break;
 
-                for (let a of this.findActorsAtPoint(point)) {
+                let distance = Point.Distance(this.hero.position, linePoint);
+                let intensity = this.getLightSourceIntensity(distance, this.hero.lightSourceRange);
+
+                for (let a of this.actorLayer.actorsAt(linePoint.x, linePoint.y)) {
                     if (a.blocksLight) {
                         obstructing = true;
                     }
 
-                    let distance = Point.Distance(this.hero.location, point);
-                    let intensity = this.getLightSourceIntensity(distance, this.hero.lightSourceRange);
+                    if (intensity != LightSourceTint.Visible1 && a.name == 'hero') {
+                        var lolwtf = true;
+                    }
 
                     // We don't want to block the object itself from being lit, just ones after it.
                     a.sprite.tint = intensity;
@@ -420,7 +365,7 @@ class Game {
 
     private centerCameraOnHero() : void {
         // center on hero (not exactly center yet)
-        let heroPos = this.getActorWorldPosition(this.hero);
+        let heroPos = this.getSpriteRenderPosition(this.hero);
         this.worldContainer.x = (this.renderer.width / 2) - heroPos.x;
         this.worldContainer.y = (this.renderer.height / 2) - heroPos.y;
 
@@ -429,8 +374,8 @@ class Game {
         let topRight = heroPos.x + ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
         let bottomLeft = heroPos.y - ((this.worldTileDisplayHeight / 2) * this.worldSpriteSize);
 
-        for (let a of this.actors) {
-            let pos = this.getActorWorldPosition(a);
+        for (let a of this.actorLayer.getActors()) {
+            let pos = this.getSpriteRenderPosition(a);
 
             if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
                 a.renderVisibility = true;
@@ -488,9 +433,8 @@ class Game {
             "############################################################",
         ];
 
-        this.collisionLayer = new CellLayer(map[0].length, map.length); // Assumes we have no varying size (purely square/rectangle)
-
-        this.actors = [];
+        this.actorLayer = new CellLayer(map[0].length, map.length); // Assumes we have no varying size (purely square/rectangle)
+        this.collisionLayer = new CellLayer(map[0].length, map.length);
 
         let floor: Point[] = [];
         let walls: Point[] = [];
@@ -503,11 +447,9 @@ class Game {
                 let location = new Point(x, y);
 
                 if (tile == 'p') {
-                    let sprite = new PIXI.Sprite(this.atlas['sprite350']);
                     // let sprite = new PIXI.Sprite(this.creatureAtlas['sprite3']); // EXPERIMENTAL
+                    let sprite = new PIXI.Sprite(this.atlas['sprite350']);
                     this.hero = new Hero(sprite, location);
-                    this.setActorPosition(this.hero, location);
-                    this.actors.push(this.hero);
                 }
                 else if (tile == '#') {
                     walls.push(location);
@@ -531,8 +473,6 @@ class Game {
         }
 
         for (let p of floor) {
-            let sprite = new PIXI.Sprite(this.atlas['sprite210']);
-
             /*
             let spriteNumbers = [15,16,21,22]; // EXPERIMENTAL
             let rand = Math.floor((Math.random() * 4));
@@ -540,16 +480,12 @@ class Game {
             let sprite = new PIXI.Sprite(this.tileAtlas[spriteName]);
             */
 
+            let sprite = new PIXI.Sprite(this.atlas['sprite210']);
             let a = new Floor(sprite, p);
-            this.setActorPosition(a, p);
-            this.actors.push(a);
-
-            this.worldContainer.addChild(a.sprite);
+            this.addActorToWorld(a);
         }
 
         for (let p of walls) {
-            let sprite = new PIXI.Sprite(this.atlas['sprite172']);
-
             /*
             // check if wall below
             let spriteName = 'sprite25'; // EXPERIMENTAL
@@ -562,36 +498,26 @@ class Game {
             let sprite = new PIXI.Sprite(this.tileAtlas[spriteName]);
             */
 
+            let sprite = new PIXI.Sprite(this.atlas['sprite172']);
             let a = new Wall(sprite, p);
-            this.setActorPosition(a, p);
-            this.actors.push(a);
-
-            this.worldContainer.addChild(a.sprite);
-
-            this.collisionLayer.addActor(p.x, p.y, a);
+            this.addActorToWorld(a);
         }
 
         for (let p of gold) {
-            let sprite = new PIXI.Sprite(this.atlas['sprite250']);
             // let sprite = new PIXI.Sprite(this.itemAtlas['sprite48']); // EXPERIMENTAL
+            let sprite = new PIXI.Sprite(this.atlas['sprite250']);
             let a = new Gold(sprite, p);
-            this.setActorPosition(a, p);
-            this.actors.push(a);
-
-            this.worldContainer.addChild(a.sprite);
+            this.addActorToWorld(a);
         }
 
         for (let p of enemies) {
-            let sprite = new PIXI.Sprite(this.atlas['sprite378']);
             // let sprite = new PIXI.Sprite(this.creatureAtlas['sprite46']); // EXPERIMENTAL
+            let sprite = new PIXI.Sprite(this.atlas['sprite378']);
             let a = new Npc(sprite, p);
-            this.setActorPosition(a, p);
-            this.actors.push(a);
-
-            this.worldContainer.addChild(a.sprite);
+            this.addActorToWorld(a);
         }
 
-        this.worldContainer.addChild(this.hero.sprite);
+        this.addActorToWorld(this.hero);
     }
 }
 

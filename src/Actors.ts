@@ -1,5 +1,5 @@
 class Actor {
-    location: Point;
+    position: Point;
     health: number = 0;
     damage: number = 0;
     gold: number = 0;
@@ -16,11 +16,11 @@ class Actor {
     blocksLight: boolean = false; // Does it block light sources?
 
     // Collision
-    blocksMovement: boolean = false; // Does it block movement?
+    blocksMovement: boolean = false; // Does it block movement?   <--- NOTE: A bit weird, because this is used for instantiation only. If this is changed, the collision layer should too.
 
     constructor(sprite: PIXI.Sprite, location: Point) {
         this.sprite = sprite;
-        this.location = location;
+        this.position = location;
     }
 
     inflictDamage(amount: number) : void {
