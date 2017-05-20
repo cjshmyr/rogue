@@ -229,10 +229,10 @@ class Game {
         else if (item) {
             // For now, assume it's gold
             // Pick it up / give gold
-            this.hero.gold += a.gold; // HACKY: it should be a different property.
+            this.hero.gold += item.gold; // HACKY: it should be a different property.
 
-            this.hudCombatLog.push('You picked up ' + a.gold + ' gold!');
-            this.removeActorFromWorld(a);
+            this.hudCombatLog.push('You picked up ' + item.gold + ' gold!');
+            this.removeActorFromWorld(item);
         }
 
         if (allowMove) {
