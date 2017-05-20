@@ -1,5 +1,5 @@
 class CellLayer {
-    private cells: Actor[][][]; // [x,y] = Actor[]
+    private cells: Actor[][];
     count: number;
     actorCount: number;
 
@@ -10,7 +10,7 @@ class CellLayer {
         for (let y = 0; y < maxY; y++) {
             this.cells[y] = [];
             for (let x = 0; x < maxX; x++) {
-                this.cells[y][x] = [];
+                this.cells[y][x] = null;
                 count++;
             }
         }
@@ -23,8 +23,8 @@ class CellLayer {
         let actors = [];
         for (let y = 0; y < this.cells.length; y++) {
             for (let x = 0; x < this.cells[y].length; x++) {
-                for (let a of this.cells[y][x]) {
-                    actors.push(a);
+                if (this.cells[y][x] != null) {
+                    actors.push(this.cells[y][x]);
                 }
             }
         }
@@ -32,19 +32,23 @@ class CellLayer {
     }
 
     public addActor(a: Actor, x: number, y: number) : void {
-        this.cells[y][x].push(a);
-        this.actorCount++;
+        if (this.cells[y][x] == null) {
+            this.cells[y][x] = a;
+            this.actorCount++;
+        }
+        else {
+            console.log('addActor: actor already exists at this position (no operation performed)');
+        }
     }
 
     public removeActor(a: Actor, x: number, y: number) : void {
-        let index: number = this.cells[y][x].indexOf(a, 0);
-        if (index > -1) {
-            this.cells[y][x].splice(index, 1);
+        if (this.cells[y][x] != null) {
+            this.cells[y][x] = null;
+            this.actorCount--;
         }
         else {
-            alert('removeActor: else statement hit');
+            console.log('removeActor: actor was already removed, or not part of layer (no operation performed)');
         }
-        this.actorCount--;
     }
 
     public moveActor(a: Actor, newX: number, newY: number) : void { // TODO: Support point as a parameter.
@@ -52,7 +56,7 @@ class CellLayer {
         this.addActor(a, newX, newY);
     }
 
-    public actorsAt(x: number, y: number) : Actor[] {
+    public actorAt(x: number, y: number) : Actor {
         return this.cells[y][x];
     }
 }

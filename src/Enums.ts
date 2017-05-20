@@ -18,3 +18,12 @@ enum LightSourceTint {
     Fog = 0x999999, // Grey (dimmed) - 60% darkness
     Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
+
+enum ActorType {
+    Undefined,
+    Hero,
+    Npc,
+    Floor,
+    Wall,
+    Item
+}

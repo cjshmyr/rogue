@@ -12,7 +12,10 @@ class Game {
     // Rendering
     renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
     stage: PIXI.Container;
-    worldContainer: PIXI.Container;
+    floorContainer: PIXI.Container;
+    wallContainer: PIXI.Container;
+    itemContainer: PIXI.Container;
+    lifeContainer: PIXI.Container;
     hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
     // creatureAtlas: PIXI.loaders.TextureDictionary; // EXPERIMENTAL
@@ -32,9 +35,13 @@ class Game {
     hudLastKeyPressed: string;
 
     // Game
-    actorLayer: CellLayer;
-    collisionLayer: CellLayer;
-    hero: Hero;
+    pfCollisionLayer: CellLayer; // For pathfinding only
+    floorLayer: CellLayer;
+    wallLayer: CellLayer;
+    itemLayer: CellLayer;
+    lifeLayer: CellLayer;
+
+    hero: Actor;
     playerTurn: boolean = true;
 
     constructor() {
@@ -45,25 +52,69 @@ class Game {
         // Game-related setup
         this.setupHud();
 
-        // Load a test map
-        this.addTestMap();
+        // Generate & load a test map
+        let map = MapGenerator.generateTestMap();
+        this.loadMap(map);
 
-        // Set camera/lighting (tasks occur after each turn)
+        // Set camera/lighting (tasks occur after each turn) // TODO: this.afterTurn();
         this.centerCameraOnHero();
         this.applyLightSources();
+        this.updateHud();
 
         // Start the game
         this.gameLoop();
+    }
+
+    private loadMap(map: Map) : void {
+        // Setup layers
+        this.pfCollisionLayer = new CellLayer(map.width, map.height);
+        this.itemLayer = new CellLayer(map.width, map.height);
+        this.floorLayer = new CellLayer(map.width, map.height);
+        this.wallLayer = new CellLayer(map.width, map.height);
+        this.lifeLayer = new CellLayer(map.width, map.height);
+
+        // One-time setup
+        for (let a of map.actors) {
+            // Assign hero for easier reference
+            if (a.actorType == ActorType.Hero) {
+                this.hero = a;
+            }
+
+            // Setup their sprites
+            let texture = this.getSpriteTexture(a.name);
+            a.sprite = new PIXI.Sprite(texture);
+
+            // Add to world
+            this.addActorToWorld(a);
+        }
+    }
+
+    // TODO: Define elsewhere
+    private getSpriteTexture(actorName: string) : PIXI.Texture {
+        let file = '';
+        if (actorName == 'Hero') file = 'sprite350';
+        else if (actorName == 'Floor') file = 'sprite210'
+        else if (actorName == 'Wall') file = 'sprite172'
+        else if (actorName == 'Gold') file = 'sprite250'
+        else if (actorName == 'Monster') file = 'sprite378'
+        else alert('getSpriteTexture: Unknown actor name -> sprite file: ' + actorName);
+        return this.atlas[file];
     }
 
     private setupRenderer() : void {
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
         this.renderer = PIXI.autoDetectRenderer(800, 800, { backgroundColor: CanvasColor.Background, view: canvas });
         this.stage = new PIXI.Container();
-        this.worldContainer = new PIXI.Container();
+        this.floorContainer = new PIXI.Container();
+        this.wallContainer = new PIXI.Container();
+        this.itemContainer = new PIXI.Container();
+        this.lifeContainer = new PIXI.Container();
         this.hudContainer = new PIXI.Container();
 
-        this.stage.addChild(this.worldContainer);
+        this.stage.addChild(this.floorContainer);
+        this.stage.addChild(this.wallContainer);
+        this.stage.addChild(this.itemContainer);
+        this.stage.addChild(this.lifeContainer);
         this.stage.addChild(this.hudContainer);
 
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
@@ -123,7 +174,6 @@ class Game {
 
     private updateHud() : void {
         // Display the 6-top most items
-
         let combatLog = '';
         let lastSixLines = this.hudCombatLog.slice(Math.max(this.hudCombatLog.length - 6, 0));
         for (let l of lastSixLines) {
@@ -134,29 +184,34 @@ class Game {
         }
         this.bottomHudText.text = combatLog;
 
-        this.rightHudText.text = 'Health: ' + this.hero.health
+        this.rightHudText.text = 'Health: ' + this.hero.hitpoints
             + '\nGold: ' + this.hero.gold
             + '\n\n-- debug --'
             + '\nLast key: ' + this.hudLastKeyPressed
             + '\nHero position (x,y): ' + this.hero.position.x + ',' + this.hero.position.y
             + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai')
             + '\n\n-- layers --'
-            + '\nActors: ' + this.actorLayer.actorCount + '/' + this.actorLayer.count
-            + '\nCollision: ' + this.collisionLayer.actorCount + '/' + this.collisionLayer.count
+            // + '\nActors: ' + this.actorLayer.actorCount + '/' + this.actorLayer.count
+            + '\nCollision: ' + this.pfCollisionLayer.actorCount + '/' + this.pfCollisionLayer.count
+            + '\nFloor: ' + this.floorLayer.actorCount + '/' + this.floorLayer.count
+            + '\nWall: ' + this.wallLayer.actorCount + '/' + this.wallLayer.count
+            + '\nLife: ' + this.lifeLayer.actorCount + '/' + this.lifeLayer.count
+            + '\nItem: ' + this.itemLayer.actorCount + '/' + this.itemLayer.count
     }
 
     private doHeroAction(movement: Point) : void {
         let destination = Point.Add(this.hero.position, movement);
-        let actorsAtDest: Actor[] = this.actorLayer.actorsAt(destination.x, destination.y);
+        let wall = this.wallLayer.actorAt(destination.x, destination.y);
+        let a = this.lifeLayer.actorAt(destination.x, destination.y);
+        let item = this.itemLayer.actorAt(destination.x, destination.y);
 
         let allowMove: boolean = true;
-        for (let a of actorsAtDest) {
-            if (a instanceof Wall) { // Check if destination is blocked
-                this.hudCombatLog.push('You cannot move there.');
-
-                allowMove = false;
-            }
-            else if (a instanceof Npc) { // Check if we're attacking something
+        if (wall) {
+            this.hudCombatLog.push('You cannot move there.');
+            allowMove = false;
+        }
+        else if (a) {
+            if (a.actorType == ActorType.Npc) {
                 // Atack it!
                 a.inflictDamage(this.hero.damage);
                 this.hudCombatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
@@ -168,14 +223,14 @@ class Game {
 
                 allowMove = false;
             }
-            else if (a instanceof Gold) { // Check if we're picking up something
-                // Pick it up!
-                // Give gold
-                this.hero.gold += a.amount;
+        }
+        else if (item) {
+            // For now, assume it's gold
+            // Pick it up / give gold
+            this.hero.gold += a.gold; // HACKY: it should be a different property.
 
-                this.hudCombatLog.push('You picked up ' + a.amount + ' gold!');
-                this.removeActorFromWorld(a);
-            }
+            this.hudCombatLog.push('You picked up ' + a.gold + ' gold!');
+            this.removeActorFromWorld(a);
         }
 
         if (allowMove) {
@@ -187,11 +242,12 @@ class Game {
 
         this.centerCameraOnHero();
         this.applyLightSources();
+        this.updateHud();
     }
 
     private doNpcActions() : void {
-        for (let a of this.actorLayer.getActors()) {
-            if (a instanceof Npc) {
+        for (let a of this.lifeLayer.getActors()) {
+            if (a.actorType == ActorType.Npc) {
                 this.doNpcAction(a);
             }
         }
@@ -199,18 +255,19 @@ class Game {
         this.playerTurn = true;
     }
 
-    private doNpcAction(npc: Npc) {
+    private doNpcAction(npc: Actor) {
         // TODO: Attempt to move towards player
         // This is insanely stupid.
         let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
-        let actorsAtDest = this.actorLayer.actorsAt(destination.x, destination.y);
+        let wall = this.wallLayer.actorAt(destination.x, destination.y);
+        let a = this.lifeLayer.actorAt(destination.x, destination.y);
 
         let allowMove: boolean = true;
-        for (let a of actorsAtDest) {
-            if (a instanceof Wall || a instanceof Npc) {
-                allowMove = false;
-            }
-            else if (a instanceof Hero) {
+        if (wall) {
+            allowMove = false;
+        }
+        else if (a) {
+            if (a.actorType == ActorType.Hero) {
                 // Attack player
                 a.inflictDamage(npc.damage);
                 this.hudCombatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
@@ -229,21 +286,26 @@ class Game {
         if (allowMove) {
             this.updateActorPosition(npc, destination);
         }
+
+        this.applyLightSources();
+        this.updateHud();
     }
 
     private addActorToWorld(a: Actor) : void {
         let initPosition = a.position;
 
-        // Add to actor layer
-        this.actorLayer.addActor(a, initPosition.x, initPosition.y);
+        // Add to appropriate layer
+        let layer = this.getCellLayerForActor(a);
+        layer.addActor(a, initPosition.x, initPosition.y);
 
         // Add to collision layer if appropriate
         if (a.blocksMovement) {
-            this.collisionLayer.addActor(a, initPosition.x, initPosition.y);
+            this.pfCollisionLayer.addActor(a, initPosition.x, initPosition.y);
         }
 
         // Add their sprite
-        this.worldContainer.addChild(a.sprite);
+        let container = this.getContainerForActor(a);
+        container.addChild(a.sprite);
 
         // Update the sprite's render position
         this.updateSpriteRenderPosition(a)
@@ -251,11 +313,12 @@ class Game {
 
     private updateActorPosition(a: Actor, newPosition: Point) : void {
         // Update the actor map position
-        this.actorLayer.moveActor(a, newPosition.x, newPosition.y);
+        let layer = this.getCellLayerForActor(a);
+        layer.moveActor(a, newPosition.x, newPosition.y);
 
-        // Move in collision layer if appropriate
+        // Add to collision layer if appropriate
         if (a.blocksMovement) {
-            this.collisionLayer.moveActor(a, newPosition.x, newPosition.y);
+            this.pfCollisionLayer.moveActor(a, newPosition.x, newPosition.y);
         }
 
         // Update the hero's grid location
@@ -267,15 +330,48 @@ class Game {
 
     private removeActorFromWorld(a: Actor) : void {
         // Remove from actor layer
-        this.actorLayer.removeActor(a, a.position.x, a.position.y);
+        let layer = this.getCellLayerForActor(a);
+        layer.removeActor(a, a.position.x, a.position.y);
 
         // Remove from collision layer if appropriate
         if (a.blocksMovement) {
-            this.collisionLayer.removeActor(a, a.position.x, a.position.y);
+            this.pfCollisionLayer.removeActor(a, a.position.x, a.position.y);
         }
 
         // Remove their sprite
-        this.worldContainer.removeChild(a.sprite);
+        let container = this.getContainerForActor(a);
+        container.removeChild(a.sprite);
+    }
+
+    // TODO: Combine the cell layer / container gets
+    private getCellLayerForActor(a: Actor) : CellLayer {
+        let layer: CellLayer = null;
+        if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
+            layer = this.lifeLayer;
+        else if (a.actorType == ActorType.Floor)
+            layer = this.floorLayer;
+        else if (a.actorType == ActorType.Wall)
+            layer = this.wallLayer;
+        else if (a.actorType == ActorType.Item)
+            layer = this.itemLayer;
+        else
+            alert('addActorToWorld: could not find a cellLayer for type: ' + a.actorType);
+        return layer;
+    }
+
+    private getContainerForActor(a: Actor) : PIXI.Container {
+        let container: PIXI.Container = null;
+        if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
+            container = this.lifeContainer;
+        else if (a.actorType == ActorType.Floor)
+            container = this.floorContainer;
+        else if (a.actorType == ActorType.Wall)
+            container = this.wallContainer;
+        else if (a.actorType == ActorType.Item)
+            container = this.itemContainer;
+        else
+            alert('addActorToWorld: could not find a container for type: ' + a.actorType);
+        return container;
     }
 
     private updateSpriteRenderPosition(a: Actor) : void { // TODO: Will need refactor with camera/animation changes.
@@ -285,16 +381,37 @@ class Game {
     }
 
     private getSpriteRenderPosition(a: Actor) : Point {
+        if (a.position == null) {
+            var broken = true;
+        }
+
         let rX = a.position.x * this.worldSpriteSize;
         let rY = a.position.y * this.worldSpriteSize;
         return new Point(rX, rY);
     }
 
+    private getWorldRenderContainers() : PIXI.Container[] {
+        // Excludes things we don't want to center (i.e. hud, minimap, etc)
+        return [ this.floorContainer, this.wallContainer, this.lifeContainer, this.itemContainer ];
+    }
+
+    private getAllActors() : Actor[] {
+        let actors: Actor[] = [];
+        actors = actors.concat(this.floorLayer.getActors(), this.wallLayer.getActors(), this.itemLayer.getActors(), this.lifeLayer.getActors());
+        return actors;
+    }
+
+    private getAllActorsAt(x: number, y: number) : Actor[] {
+        let actors: Actor[] = [];
+        actors = actors.concat(this.floorLayer.actorAt(x, y), this.wallLayer.actorAt(x, y), this.itemLayer.actorAt(x, y), this.lifeLayer.actorAt(x, y));
+        return actors;
+    }
+
     private applyLightSources() : void {
         // Dim/shroud everything, then apply sources
-        for (let a of this.actorLayer.getActors()) {
+        for (let a of this.getAllActors()) {
             // Skip processing out-of-bounds actors
-            if (!a.renderVisibility)
+            if (!a.inRenderBounds)
                 continue;
 
             // Set visible if they're not hidden under fog
@@ -319,7 +436,12 @@ class Game {
                 let distance = Point.Distance(this.hero.position, linePoint);
                 let intensity = this.getLightSourceIntensity(distance, this.hero.lightSourceRange);
 
-                for (let a of this.actorLayer.actorsAt(linePoint.x, linePoint.y)) {
+                for (let a of this.getAllActorsAt(linePoint.x, linePoint.y)) {
+                    if (a == null) {
+                        let bad = true;
+                        continue; // SHOULD NEVER HAPPEN???
+                    }
+
                     if (a.blocksLight) {
                         obstructing = true;
                     }
@@ -347,157 +469,32 @@ class Game {
     private centerCameraOnHero() : void {
         // center on hero (not exactly center yet)
         let heroPos = this.getSpriteRenderPosition(this.hero);
-        this.worldContainer.x = (this.renderer.width / 2) - heroPos.x;
-        this.worldContainer.y = (this.renderer.height / 2) - heroPos.y;
+        for (let c of this.getWorldRenderContainers()) {
+            c.x = (this.renderer.width / 2) - heroPos.x;
+            c.y = (this.renderer.height / 2) - heroPos.y;
+        }
 
         // don't render things outside of viewport
         let topLeft = heroPos.x - ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
         let topRight = heroPos.x + ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
         let bottomLeft = heroPos.y - ((this.worldTileDisplayHeight / 2) * this.worldSpriteSize);
 
-        for (let a of this.actorLayer.getActors()) {
+        for (let a of this.getAllActors()) {
             let pos = this.getSpriteRenderPosition(a);
 
             if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
-                a.renderVisibility = true;
+                a.inRenderBounds = true;
                 a.sprite.visible = true;
             }
             else {
-                a.renderVisibility = false;
+                a.inRenderBounds = false;
                 a.sprite.visible = false;
             }
-
         }
-
     }
 
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
-
-        this.updateHud(); // TODO: move out of loop, unless we need to do this every frame
-
         this.renderer.render(this.stage);
-    }
-
-    private addTestMap() : void {
-        // Sample map
-        let map = [
-            "############################################################",
-            "#               #        #   #                             #",
-            "#          e    #        #   #                             #",
-            "#               #                                          #",
-            "#      #        #            #                             #",
-            "#      #        #            #                             #",
-            "# #  # #        #        # e #                             #",
-            "# #    #        #        #   #                             #",
-            "# #    #        #    ###### ##                             #",
-            "#      #                     #                             #",
-            "#      #                     #                             #",
-            "#      ##########         ####                             #",
-            "#      ##########     g      #                             #",
-            "#                    ggg                                   #",
-            "# e    ##########     g                     p              #",
-            "#      ##########            #                             #",
-            "#      ###############       #                             #",
-            "#                            #                             #",
-            "#       #    #      #        #                             #",
-            "#                            #                             #",
-            "######### ########  e        #                             #",
-            "######### ########           #                             #",
-            "#  ggggg  ########           #                             #",
-            "# ################          ##                             #",
-            "# ##############           ###                             #",
-            "# #############           ####                             #",
-            "# gg  ########          ######                             #",
-            "##### ########        ########                             #",
-            "#  e                 #########                             #",
-            "############################################################",
-        ];
-
-        this.actorLayer = new CellLayer(map[0].length, map.length); // Assumes we have no varying size (purely square/rectangle)
-        this.collisionLayer = new CellLayer(map[0].length, map.length);
-
-        let floor: Point[] = [];
-        let walls: Point[] = [];
-        let enemies: Point[] = [];
-        let gold: Point[] = [];
-
-        for (let y = 0; y < map.length; y++) {
-            for (let x = 0; x < map[y].length; x++) {
-                let tile = map[y][x];
-                let location = new Point(x, y);
-
-                if (tile == 'p') {
-                    // let sprite = new PIXI.Sprite(this.creatureAtlas['sprite3']); // EXPERIMENTAL
-                    let sprite = new PIXI.Sprite(this.atlas['sprite350']);
-                    this.hero = new Hero(sprite, location);
-                }
-                else if (tile == '#') {
-                    walls.push(location);
-                }
-                else if (tile == ' ') {
-                    // floors are added regardless; do nothing, but don't throw an error
-                }
-                else if (tile == 'g') {
-                    gold.push(location);
-                }
-                else if (tile == 'e') {
-                    enemies.push(location);
-                }
-                else {
-                    alert('loadMap: Unknown actor type: ' + tile);
-                    return;
-                }
-
-                floor.push(location);
-            }
-        }
-
-        for (let p of floor) {
-            /*
-            let spriteNumbers = [15,16,21,22]; // EXPERIMENTAL
-            let rand = Math.floor((Math.random() * 4));
-            let spriteName = 'sprite' + spriteNumbers[rand];
-            let sprite = new PIXI.Sprite(this.tileAtlas[spriteName]);
-            */
-
-            let sprite = new PIXI.Sprite(this.atlas['sprite210']);
-            let a = new Floor(sprite, p);
-            this.addActorToWorld(a);
-        }
-
-        for (let p of walls) {
-            /*
-            // check if wall below
-            let spriteName = 'sprite25'; // EXPERIMENTAL
-            var below = Point.Subtract(p, new Point(0, -1));
-            for (let q of walls) {
-                if (q.Equals(below)) {
-                    spriteName = 'sprite8';
-                }
-            }
-            let sprite = new PIXI.Sprite(this.tileAtlas[spriteName]);
-            */
-
-            let sprite = new PIXI.Sprite(this.atlas['sprite172']);
-            let a = new Wall(sprite, p);
-            this.addActorToWorld(a);
-        }
-
-        for (let p of gold) {
-            // let sprite = new PIXI.Sprite(this.itemAtlas['sprite48']); // EXPERIMENTAL
-            let sprite = new PIXI.Sprite(this.atlas['sprite250']);
-            let a = new Gold(sprite, p);
-            this.addActorToWorld(a);
-        }
-
-        for (let p of enemies) {
-            // let sprite = new PIXI.Sprite(this.creatureAtlas['sprite46']); // EXPERIMENTAL
-            let sprite = new PIXI.Sprite(this.atlas['sprite378']);
-            let a = new Npc(sprite, p);
-            this.addActorToWorld(a);
-        }
-
-        this.addActorToWorld(this.hero);
     }
 }
