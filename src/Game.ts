@@ -147,7 +147,7 @@ class Game {
 
     private doHeroAction(movement: Point) : void {
         let destination = Point.Add(this.hero.position, movement);
-        let actorsAtDest: Actor[] = this.getActorsAtPoint(destination);
+        let actorsAtDest: Actor[] = this.actorLayer.actorsAt(destination.x, destination.y);
 
         let allowMove: boolean = true;
         for (let a of actorsAtDest) {
@@ -203,7 +203,7 @@ class Game {
         // TODO: Attempt to move towards player
         // This is insanely stupid.
         let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
-        let actorsAtDest = this.getActorsAtPoint(destination);
+        let actorsAtDest = this.actorLayer.actorsAt(destination.x, destination.y);
 
         let allowMove: boolean = true;
         for (let a of actorsAtDest) {
@@ -288,22 +288,6 @@ class Game {
         let rX = a.position.x * this.worldSpriteSize;
         let rY = a.position.y * this.worldSpriteSize;
         return new Point(rX, rY);
-    }
-
-    private getActorsAtPoint(p: Point) : Actor[] {
-        return this.getActorsAtPoints([p]);
-    }
-
-    private getActorsAtPoints(points: Point[]) : Actor[] {
-        let actorsInPoints: Actor[] = [];
-
-        for (let p of points) {
-            for (let a of this.actorLayer.actorsAt(p.x, p.y)) {
-                actorsInPoints.push(a);
-            }
-        }
-
-        return actorsInPoints;
     }
 
     private applyLightSources() : void {
