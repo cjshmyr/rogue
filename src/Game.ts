@@ -16,6 +16,7 @@ class Game {
     wallContainer: PIXI.Container;
     itemContainer: PIXI.Container;
     lifeContainer: PIXI.Container;
+    private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.wallContainer, this.itemContainer, this.lifeContainer ]; }
     hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
     // creatureAtlas: PIXI.loaders.TextureDictionary; // EXPERIMENTAL
@@ -35,11 +36,12 @@ class Game {
     hudLastKeyPressed: string;
 
     // Game
-    pfCollisionLayer: CellLayer; // For pathfinding only
     floorLayer: CellLayer;
     wallLayer: CellLayer;
     itemLayer: CellLayer;
     lifeLayer: CellLayer;
+    private worldLayers() : CellLayer[] { return [ this.floorLayer, this.wallLayer, this.itemLayer, this.lifeLayer ] }
+    pfCollisionLayer: CellLayer; // For pathfinding only
 
     hero: Actor;
     playerTurn: boolean = true;
@@ -390,26 +392,28 @@ class Game {
         return new Point(rX, rY);
     }
 
-    private getWorldRenderContainers() : PIXI.Container[] {
-        // Excludes things we don't want to center (i.e. hud, minimap, etc)
-        return [ this.floorContainer, this.wallContainer, this.lifeContainer, this.itemContainer ];
-    }
-
-    private getAllActors() : Actor[] {
+    private getAllLayerActors() : Actor[] {
         let actors: Actor[] = [];
-        actors = actors.concat(this.floorLayer.getActors(), this.wallLayer.getActors(), this.itemLayer.getActors(), this.lifeLayer.getActors());
+        for (let l of this.worldLayers()) {
+            actors = actors.concat(l.getActors());
+        }
         return actors;
     }
 
-    private getAllActorsAt(x: number, y: number) : Actor[] {
+    private getAllLayerActorsAt(x: number, y: number) : Actor[] {
         let actors: Actor[] = [];
-        actors = actors.concat(this.floorLayer.actorAt(x, y), this.wallLayer.actorAt(x, y), this.itemLayer.actorAt(x, y), this.lifeLayer.actorAt(x, y));
+        for (let l of this.worldLayers()) {
+            var a = l.actorAt(x, y);
+            if (a != null) { // Don't add nulls
+                actors.push(a);
+            }
+        }
         return actors;
     }
 
     private applyLightSources() : void {
         // Dim/shroud everything, then apply sources
-        for (let a of this.getAllActors()) {
+        for (let a of this.getAllLayerActors()) {
             // Skip processing out-of-bounds actors
             if (!a.inRenderBounds)
                 continue;
@@ -436,7 +440,7 @@ class Game {
                 let distance = Point.Distance(this.hero.position, linePoint);
                 let intensity = this.getLightSourceIntensity(distance, this.hero.lightSourceRange);
 
-                for (let a of this.getAllActorsAt(linePoint.x, linePoint.y)) {
+                for (let a of this.getAllLayerActorsAt(linePoint.x, linePoint.y)) {
                     if (a == null) {
                         let bad = true;
                         continue; // SHOULD NEVER HAPPEN???
@@ -469,7 +473,7 @@ class Game {
     private centerCameraOnHero() : void {
         // center on hero (not exactly center yet)
         let heroPos = this.getSpriteRenderPosition(this.hero);
-        for (let c of this.getWorldRenderContainers()) {
+        for (let c of this.worldContainers()) {
             c.x = (this.renderer.width / 2) - heroPos.x;
             c.y = (this.renderer.height / 2) - heroPos.y;
         }
@@ -479,7 +483,7 @@ class Game {
         let topRight = heroPos.x + ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
         let bottomLeft = heroPos.y - ((this.worldTileDisplayHeight / 2) * this.worldSpriteSize);
 
-        for (let a of this.getAllActors()) {
+        for (let a of this.getAllLayerActors()) {
             let pos = this.getSpriteRenderPosition(a);
 
             if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
