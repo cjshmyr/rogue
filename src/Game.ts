@@ -339,10 +339,6 @@ class Game {
                         obstructing = true;
                     }
 
-                    if (intensity != LightSourceTint.Visible1 && a.name == 'hero') {
-                        var lolwtf = true;
-                    }
-
                     // We don't want to block the object itself from being lit, just ones after it.
                     a.sprite.tint = intensity;
                     a.sprite.visible = true;
@@ -393,7 +389,7 @@ class Game {
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
 
-        this.updateHud(); // 518: move to out of loop
+        this.updateHud(); // TODO: move out of loop, unless we need to do this every frame
 
         this.renderer.render(this.stage);
     }

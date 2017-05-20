@@ -10,7 +10,7 @@ class CellLayer {
         for (let y = 0; y < maxY; y++) {
             this.cells[y] = [];
             for (let x = 0; x < maxX; x++) {
-                this.cells[y][x] = []; // Different; empty array
+                this.cells[y][x] = [];
                 count++;
             }
         }
@@ -47,7 +47,7 @@ class CellLayer {
         this.actorCount--;
     }
 
-    public moveActor(a: Actor, newX: number, newY: number) : void { // TODO: Support point as a parameter. Can we somehow just make 'setActorPosition' a thing?
+    public moveActor(a: Actor, newX: number, newY: number) : void { // TODO: Support point as a parameter.
         this.removeActor(a, a.position.x, a.position.y);
         this.addActor(a, newX, newY);
     }
