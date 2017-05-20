@@ -5,11 +5,16 @@ enum CanvasColor {
 
 enum HudColor {
     Black = 0x000000,
-    White = 0xffffff
+    White = 0xffffff,
+    Grey = 0x808080,
+    Red = 0xff0000,
+    Orange = 0xffcc00,
+    Green = 0x99ff33,
+    Maroon = 0x800000
 }
 
 enum LightSourceTint {
-    Visible1 = 0xffffff, // None
+    Visible1 = 0xffffff, // None/White
     Visible2 = 0xf2f2f2, // 95%
     Visible3 = 0xe6e6e6, // 90%
     Visible4 = 0xd9d9d9, // 85%
@@ -26,4 +31,11 @@ enum ActorType {
     Floor,
     Wall,
     Item
+}
+
+enum KeyCode {
+    LeftArrow = 37,
+    UpArrow = 38,
+    RightArrow = 39,
+    DownArrow = 40
 }

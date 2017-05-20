@@ -17,6 +17,7 @@ class Game {
     itemContainer: PIXI.Container;
     lifeContainer: PIXI.Container;
     private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.wallContainer, this.itemContainer, this.lifeContainer ]; }
+    minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
     // creatureAtlas: PIXI.loaders.TextureDictionary; // EXPERIMENTAL
@@ -28,12 +29,16 @@ class Game {
     readonly worldTileDisplayHeight: number = 50; // Matches to canvas size (800)
 
     // HUD
-    readonly bottomHudStart: Point = new Point(16, 700);
+    readonly bottomHudStart: Point = new Point(16, 600);
     bottomHudText: PIXI.Text;
     readonly rightHudStart: Point = new Point(600, 16);
     rightHudText: PIXI.Text;
     hudCombatLog: string[] = [];
     hudLastKeyPressed: string;
+
+    // Minimap
+    readonly minimapTopLeftStart: Point = new Point(600, 600);
+    minimap: PIXI.Graphics;
 
     // Game
     floorLayer: CellLayer;
@@ -53,15 +58,14 @@ class Game {
 
         // Game-related setup
         this.setupHud();
+        this.setupMinimap();
 
         // Generate & load a test map
         let map = MapGenerator.generateTestMap();
         this.loadMap(map);
 
-        // Set camera/lighting (tasks occur after each turn) // TODO: this.afterTurn();
-        this.centerCameraOnHero();
-        this.applyLightSources();
-        this.updateHud();
+        // Set camera/lighting/hud/etc (these tasks occur after each turn)
+        this.turnEnded();
 
         // Start the game
         this.gameLoop();
@@ -111,12 +115,14 @@ class Game {
         this.wallContainer = new PIXI.Container();
         this.itemContainer = new PIXI.Container();
         this.lifeContainer = new PIXI.Container();
+        this.minimapContainer = new PIXI.Container();
         this.hudContainer = new PIXI.Container();
 
         this.stage.addChild(this.floorContainer);
         this.stage.addChild(this.wallContainer);
         this.stage.addChild(this.itemContainer);
         this.stage.addChild(this.lifeContainer);
+        this.stage.addChild(this.minimapContainer);
         this.stage.addChild(this.hudContainer);
 
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
@@ -174,11 +180,16 @@ class Game {
         this.hudContainer.addChild(this.rightHudText);
     }
 
+    private setupMinimap() : void {
+        this.minimap = new PIXI.Graphics();
+        this.minimapContainer.addChild(this.minimap);
+    }
+
     private updateHud() : void {
-        // Display the 6-top most items
+        // Display the 12-top most items
         let combatLog = '';
-        let lastSixLines = this.hudCombatLog.slice(Math.max(this.hudCombatLog.length - 6, 0));
-        for (let l of lastSixLines) {
+        let lastLines = this.hudCombatLog.slice(Math.max(this.hudCombatLog.length - 12, 0));
+        for (let l of lastLines) {
             if (combatLog == '')
                 combatLog = l;
             else
@@ -240,11 +251,9 @@ class Game {
         }
 
         this.playerTurn = false;
-        this.doNpcActions();
+        this.turnEnded();
 
-        this.centerCameraOnHero();
-        this.applyLightSources();
-        this.updateHud();
+        this.doNpcActions();
     }
 
     private doNpcActions() : void {
@@ -255,6 +264,7 @@ class Game {
         }
 
         this.playerTurn = true;
+        this.turnEnded();
     }
 
     private doNpcAction(npc: Actor) {
@@ -288,9 +298,15 @@ class Game {
         if (allowMove) {
             this.updateActorPosition(npc, destination);
         }
+    }
+
+    private turnEnded() : void {
+        this.centerCameraOnHero();
 
         this.applyLightSources();
         this.updateHud();
+
+        this.drawMinimap();
     }
 
     private addActorToWorld(a: Actor) : void {
@@ -493,6 +509,54 @@ class Game {
             else {
                 a.inRenderBounds = false;
                 a.sprite.visible = false;
+            }
+        }
+    }
+
+    private drawMinimap() : void {
+        let scale = 3;
+        let opacity = .5;
+
+        this.minimap.clear();
+
+        for (let a of this.floorLayer.getActors()) {
+            if (a.revealed) {
+                this.minimap.beginFill(HudColor.White, opacity);
+                this.minimap.lineColor = HudColor.White;
+                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
+                this.minimap.endFill();
+            }
+        }
+
+        for (let a of this.wallLayer.getActors()) {
+            if (a.revealed) {
+                this.minimap.beginFill(HudColor.Maroon, opacity);
+                this.minimap.lineColor = HudColor.Maroon;
+                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
+                this.minimap.endFill();
+            }
+        }
+
+        for (let a of this.itemLayer.getActors()) {
+            if (a.revealed) {
+                this.minimap.beginFill(HudColor.Orange, opacity);
+                this.minimap.lineColor = HudColor.Orange;
+                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
+                this.minimap.endFill();
+            }
+        }
+
+        for (let a of this.lifeLayer.getActors()) {
+            if (a.revealed && a.sprite.visible) {
+                let color: HudColor = HudColor.Red;
+                if (a.actorType == ActorType.Hero) {
+                    color = HudColor.Green;
+                }
+
+                this.minimap.beginFill(color, opacity);
+                this.minimap.lineColor = color;
+                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
+                this.minimap.endFill();
             }
         }
     }
