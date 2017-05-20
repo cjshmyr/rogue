@@ -321,7 +321,8 @@ class Game {
         }
 
         // Dynamic lighting (origin to annulus)
-        for (let annulusPoint of Geometry.pointsInAnnulus(this.hero.position, this.hero.lightSourceRange)) {
+        // Using a 3 cell annulus to make close vertical walls light up better (test with range 10). May want to scale with a formula instead.
+        for (let annulusPoint of Geometry.pointsInAnnulus(this.hero.position, this.hero.lightSourceRange, 3)) {
              let line = Geometry.pointsInLine(this.hero.position, annulusPoint);
 
              let obstructing = false;
