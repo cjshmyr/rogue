@@ -1,10 +1,7 @@
 window.onload = () => {
-    // Load things, start game
+    // Load art, start game
     PIXI.loader
         .add('core/art/sprites.json')
-        // .add('core/art/creatures.json') // EXPERIMENTAL
-        // .add('core/art/items.json')
-        // .add('core/art/tiles.json')
         .load(() => { let game = new Game(); })
 }
 
@@ -20,9 +17,6 @@ class Game {
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
-    // creatureAtlas: PIXI.loaders.TextureDictionary; // EXPERIMENTAL
-    // itemAtlas: PIXI.loaders.TextureDictionary;
-    // tileAtlas: PIXI.loaders.TextureDictionary;
 
     readonly worldSpriteSize: number = 16; // (16x16)
     readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
@@ -47,7 +41,6 @@ class Game {
     lifeLayer: CellLayer;
     private worldLayers() : CellLayer[] { return [ this.floorLayer, this.wallLayer, this.itemLayer, this.lifeLayer ] }
     pfCollisionLayer: CellLayer; // For pathfinding only
-
     hero: Actor;
     playerTurn: boolean = true;
 
@@ -126,9 +119,6 @@ class Game {
         this.stage.addChild(this.hudContainer);
 
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
-        // this.creatureAtlas = PIXI.loader.resources['core/art/creatures.json'].textures; // EXPERIMENTAL
-        // this.itemAtlas = PIXI.loader.resources['core/art/items.json'].textures;
-        // this.tileAtlas = PIXI.loader.resources['core/art/tiles.json'].textures;
     }
 
     private setupEvents() : void {
@@ -138,16 +128,16 @@ class Game {
             if (this.playerTurn) {
                 let movement: Point;
 
-                if (event.keyCode == 38) { // Up
+                if (event.keyCode == KeyCode.UpArrow) {
                     movement = new Point(0, -1);
                 }
-                else if (event.keyCode == 40) { // Down
+                else if (event.keyCode == KeyCode.DownArrow) {
                     movement = new Point(0, 1);
                 }
-                else if (event.keyCode == 37) { // Left
+                else if (event.keyCode == KeyCode.LeftArrow) {
                     movement = new Point(-1, 0);
                 }
-                else if (event.keyCode == 39) { // Right
+                else if (event.keyCode == KeyCode.RightArrow) {
                     movement = new Point(1, 0);
                 }
 

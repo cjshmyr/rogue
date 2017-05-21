@@ -1,3 +1,6 @@
+# IDE
+.vscode/
+
 # mongoose is used for a local webserver
 mongoose*.exe
 
