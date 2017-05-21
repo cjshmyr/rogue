@@ -91,6 +91,7 @@ class Game {
         else if (actorName == 'Wall') file = 'sprite172'
         else if (actorName == 'Gold') file = 'sprite250'
         else if (actorName == 'Monster') file = 'sprite378'
+        else if (actorName == 'Torch') file = 'sprite247'
         else alert('getSpriteTexture: Unknown actor name -> sprite file: ' + actorName);
         return this.atlas[file];
     }
@@ -292,7 +293,7 @@ class Game {
         container.removeChild(a.sprite);
     }
 
-    // TODO: Combine the cell layer / container gets. Potentially have them as properties on actor.
+    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
     private getCellLayerForActor(a: Actor) : CellLayer {
         let layer: CellLayer = null;
         if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
@@ -308,6 +309,7 @@ class Game {
         return layer;
     }
 
+    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
     private getContainerForActor(a: Actor) : PIXI.Container {
         let container: PIXI.Container = null;
         if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
@@ -359,8 +361,10 @@ class Game {
     }
 
     private applyLightSources() : void {
+        let allActors = this.getAllLayerActors();
+
         // Dim/shroud everything, then apply sources
-        for (let a of this.getAllLayerActors()) {
+        for (let a of allActors) {
             // Skip processing out-of-bounds actors
             if (!a.inRenderBounds)
                 continue;
@@ -374,33 +378,40 @@ class Game {
 
         // Dynamic lighting (origin to annulus)
         // Using a 3 cell annulus to make close vertical walls light up better (test with range 10). May want to scale with a formula instead.
-        for (let annulusPoint of Geometry.pointsInAnnulus(this.hero.position, this.hero.lightSourceRange, 3)) {
-             let line = Geometry.pointsInLine(this.hero.position, annulusPoint);
+        for (let a of allActors) {
+            if (a.lightSourceRange <= 0) { // Actor doesn't provide any light.
+                continue;
+            }
 
-             let obstructing = false;
-             // Begin from light source origin
-             for (let linePoint of line) {
+            if (a.actorType != ActorType.Hero && !a.revealed && !a.lightSourceAlwaysVisible) { // Non-hero actor hasn't been revealed yet, and we don't want to always show it
+                continue;
+            }
 
-                if (obstructing)
-                    break;
+            for (let annulusPoint of Geometry.pointsInAnnulus(a.position, a.lightSourceRange, 3)) {
+                let line = Geometry.pointsInLine(a.position, annulusPoint);
 
-                let distance = Point.Distance(this.hero.position, linePoint);
-                let intensity = this.getLightSourceIntensity(distance, this.hero.lightSourceRange);
+                let obstructing = false;
+                // Begin from light source origin
+                for (let linePoint of line) {
 
-                for (let a of this.getAllLayerActorsAt(linePoint.x, linePoint.y)) {
-                    if (a == null) {
-                        let bad = true;
-                        continue; // SHOULD NEVER HAPPEN???
+                    if (obstructing)
+                        break;
+
+                    let distance = Point.Distance(a.position, linePoint);
+                    let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
+
+                    for (let a2 of this.getAllLayerActorsAt(linePoint.x, linePoint.y)) {
+                        if (a2.blocksLight) {
+                            obstructing = true;
+                        }
+
+                        // We don't want to block the object itself from being lit, just ones after it.
+                        if (a2.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
+                            a2.sprite.tint = intensity;
+                        }
+                        a2.sprite.visible = true;
+                        a2.revealed = true;
                     }
-
-                    if (a.blocksLight) {
-                        obstructing = true;
-                    }
-
-                    // We don't want to block the object itself from being lit, just ones after it.
-                    a.sprite.tint = intensity;
-                    a.sprite.visible = true;
-                    a.revealed = true;
                 }
             }
         }

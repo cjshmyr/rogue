@@ -33,6 +33,15 @@ class ActorInitializer {
         return a;
     }
 
+    static NewTorch(position: Point) : Actor {
+        let a = new Actor('Torch', position, true);
+        a.actorType = ActorType.Wall;
+
+        a.lightSourceRange = 3;
+
+        return a;
+    }
+
     static NewFloor(position: Point) : Actor {
         let a = new Actor('Floor', position);
         a.actorType = ActorType.Floor;
@@ -48,4 +57,5 @@ class ActorInitializer {
 
         return a;
     }
+
 }

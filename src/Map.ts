@@ -19,10 +19,10 @@ class MapGenerator {
             "#               #                                          #",
             "#      #        #            #                             #",
             "#      #        #            #                             #",
-            "# #  # #        #        # e #                             #",
+            "# #  # #        #        # e #       t         t           #",
             "# #    #        #        #   #                             #",
             "# #    #        #    ###### ##                             #",
-            "#      #                     #                             #",
+            "#      #   t                 #                             #",
             "#      #                     #                             #",
             "#      ##########         ####                             #",
             "#      ##########     g      #                             #",
@@ -35,7 +35,7 @@ class MapGenerator {
             "#                            #                             #",
             "######### ########  e        #                             #",
             "######### ########           #                             #",
-            "#  ggggg  ########           #                             #",
+            "#  ggggg  ########      t    #                             #",
             "# ################          ##                             #",
             "# ##############           ###                             #",
             "# #############           ####                             #",
@@ -67,6 +67,9 @@ class MapGenerator {
                 }
                 else if (tile == 'e') {
                     map.actors.push(ActorInitializer.NewMonster(position));
+                }
+                else if (tile == 't') {
+                    map.actors.push(ActorInitializer.NewTorch(position));
                 }
                 else {
                     alert('generateTestMap: Unknown tile -> actor type: ' + tile);
