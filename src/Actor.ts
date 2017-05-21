@@ -29,11 +29,6 @@ class Actor {
         this.blocksMovement = blocksMovement;
     }
 
-    initRenderable(sprite: PIXI.Sprite, position: Point) : void {
-        this.sprite = sprite;
-        this.position = position;
-    }
-
     inflictDamage(amount: number) : void {
         this.hitpoints -= amount;
     }

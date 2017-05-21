@@ -22,17 +22,9 @@ class Game {
     readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
     readonly worldTileDisplayHeight: number = 50; // Matches to canvas size (800)
 
-    // HUD
-    readonly bottomHudStart: Point = new Point(16, 600);
-    bottomHudText: PIXI.Text;
-    readonly rightHudStart: Point = new Point(600, 16);
-    rightHudText: PIXI.Text;
-    hudCombatLog: string[] = [];
-    hudLastKeyPressed: string;
-
-    // Minimap
-    readonly minimapTopLeftStart: Point = new Point(600, 600);
-    minimap: PIXI.Graphics;
+    // HUD / Minimap
+    hud: Hud
+    minimap: Minimap;
 
     // Game
     floorLayer: CellLayer;
@@ -49,9 +41,12 @@ class Game {
         this.setupRenderer();
         this.setupEvents();
 
-        // Game-related setup
-        this.setupHud();
-        this.setupMinimap();
+        // UI
+        this.hud = new Hud();
+        this.hudContainer.addChild(this.hud.combatHud)
+        this.hudContainer.addChild(this.hud.infoHud)
+        this.minimap = new Minimap();
+        this.minimapContainer.addChild(this.minimap.graphics);
 
         // Generate & load a test map
         let map = MapGenerator.generateTestMap();
@@ -123,7 +118,7 @@ class Game {
 
     private setupEvents() : void {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
-            this.hudLastKeyPressed = event.key + ' (' + event.keyCode + ')';
+            this.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
             if (this.playerTurn) {
                 let movement: Point;
@@ -150,58 +145,6 @@ class Game {
         });
     }
 
-    private setupHud() : void {
-        this.bottomHudText = new PIXI.Text('');
-        this.bottomHudText.style.fontSize = 12;
-        this.bottomHudText.style.fill = HudColor.White;
-        this.bottomHudText.style.stroke = HudColor.Black;
-        this.bottomHudText.style.strokeThickness = 2;
-        this.bottomHudText.x = this.bottomHudStart.x;
-        this.bottomHudText.y = this.bottomHudStart.y;
-        this.hudContainer.addChild(this.bottomHudText);
-
-        this.rightHudText = new PIXI.Text('');
-        this.rightHudText.style.fontSize = 12;
-        this.rightHudText.style.fill = HudColor.White;
-        this.rightHudText.style.stroke = HudColor.Black;
-        this.rightHudText.style.strokeThickness = 2;
-        this.rightHudText.x = this.rightHudStart.x;
-        this.rightHudText.y = this.rightHudStart.y;
-        this.hudContainer.addChild(this.rightHudText);
-    }
-
-    private setupMinimap() : void {
-        this.minimap = new PIXI.Graphics();
-        this.minimapContainer.addChild(this.minimap);
-    }
-
-    private updateHud() : void {
-        // Display the 12-top most items
-        let combatLog = '';
-        let lastLines = this.hudCombatLog.slice(Math.max(this.hudCombatLog.length - 12, 0));
-        for (let l of lastLines) {
-            if (combatLog == '')
-                combatLog = l;
-            else
-                combatLog += '\n' + l;
-        }
-        this.bottomHudText.text = combatLog;
-
-        this.rightHudText.text = 'Health: ' + this.hero.hitpoints
-            + '\nGold: ' + this.hero.gold
-            + '\n\n-- debug --'
-            + '\nLast key: ' + this.hudLastKeyPressed
-            + '\nHero position (x,y): ' + this.hero.position.x + ',' + this.hero.position.y
-            + '\nTurn: ' + (this.playerTurn ? 'player' : 'ai')
-            + '\n\n-- layers --'
-            // + '\nActors: ' + this.actorLayer.actorCount + '/' + this.actorLayer.count
-            + '\nCollision: ' + this.pfCollisionLayer.actorCount + '/' + this.pfCollisionLayer.count
-            + '\nFloor: ' + this.floorLayer.actorCount + '/' + this.floorLayer.count
-            + '\nWall: ' + this.wallLayer.actorCount + '/' + this.wallLayer.count
-            + '\nLife: ' + this.lifeLayer.actorCount + '/' + this.lifeLayer.count
-            + '\nItem: ' + this.itemLayer.actorCount + '/' + this.itemLayer.count
-    }
-
     private doHeroAction(movement: Point) : void {
         let destination = Point.Add(this.hero.position, movement);
         let wall = this.wallLayer.actorAt(destination.x, destination.y);
@@ -210,17 +153,17 @@ class Game {
 
         let allowMove: boolean = true;
         if (wall) {
-            this.hudCombatLog.push('You cannot move there.');
+            this.hud.combatLog.push('You cannot move there.');
             allowMove = false;
         }
         else if (a) {
             if (a.actorType == ActorType.Npc) {
                 // Atack it!
                 a.inflictDamage(this.hero.damage);
-                this.hudCombatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
+                this.hud.combatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
 
                 if (a.isDead()) {
-                    this.hudCombatLog.push('You killed ' + a.name + '!');
+                    this.hud.combatLog.push('You killed ' + a.name + '!');
                     this.removeActorFromWorld(a);
                 }
 
@@ -232,7 +175,7 @@ class Game {
             // Pick it up / give gold
             this.hero.gold += item.gold; // HACKY: it should be a different property.
 
-            this.hudCombatLog.push('You picked up ' + item.gold + ' gold!');
+            this.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
             this.removeActorFromWorld(item);
         }
 
@@ -272,10 +215,10 @@ class Game {
             if (a.actorType == ActorType.Hero) {
                 // Attack player
                 a.inflictDamage(npc.damage);
-                this.hudCombatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
+                this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
 
                 if (a.isDead()) {
-                    this.hudCombatLog.push(npc.name + ' killed you!');
+                    this.hud.combatLog.push(npc.name + ' killed you!');
                     this.removeActorFromWorld(a);
 
                     // TODO: Hero needs to die.
@@ -292,11 +235,9 @@ class Game {
 
     private turnEnded() : void {
         this.centerCameraOnHero();
-
         this.applyLightSources();
-        this.updateHud();
-
-        this.drawMinimap();
+        this.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.wallLayer, this.lifeLayer, this.itemLayer);
+        this.minimap.updateMinimap(this.floorLayer, this.wallLayer, this.lifeLayer, this.itemLayer);
     }
 
     private addActorToWorld(a: Actor) : void {
@@ -351,7 +292,7 @@ class Game {
         container.removeChild(a.sprite);
     }
 
-    // TODO: Combine the cell layer / container gets
+    // TODO: Combine the cell layer / container gets. Potentially have them as properties on actor.
     private getCellLayerForActor(a: Actor) : CellLayer {
         let layer: CellLayer = null;
         if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
@@ -499,54 +440,6 @@ class Game {
             else {
                 a.inRenderBounds = false;
                 a.sprite.visible = false;
-            }
-        }
-    }
-
-    private drawMinimap() : void {
-        let scale = 3;
-        let opacity = .5;
-
-        this.minimap.clear();
-
-        for (let a of this.floorLayer.getActors()) {
-            if (a.revealed) {
-                this.minimap.beginFill(HudColor.White, opacity);
-                this.minimap.lineColor = HudColor.White;
-                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
-                this.minimap.endFill();
-            }
-        }
-
-        for (let a of this.wallLayer.getActors()) {
-            if (a.revealed) {
-                this.minimap.beginFill(HudColor.Maroon, opacity);
-                this.minimap.lineColor = HudColor.Maroon;
-                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
-                this.minimap.endFill();
-            }
-        }
-
-        for (let a of this.itemLayer.getActors()) {
-            if (a.revealed) {
-                this.minimap.beginFill(HudColor.Orange, opacity);
-                this.minimap.lineColor = HudColor.Orange;
-                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
-                this.minimap.endFill();
-            }
-        }
-
-        for (let a of this.lifeLayer.getActors()) {
-            if (a.revealed && a.sprite.visible) {
-                let color: HudColor = HudColor.Red;
-                if (a.actorType == ActorType.Hero) {
-                    color = HudColor.Green;
-                }
-
-                this.minimap.beginFill(color, opacity);
-                this.minimap.lineColor = color;
-                this.minimap.drawRect(this.minimapTopLeftStart.x + (a.position.x * scale), this.minimapTopLeftStart.y + (a.position.y * scale), scale, scale);
-                this.minimap.endFill();
             }
         }
     }
