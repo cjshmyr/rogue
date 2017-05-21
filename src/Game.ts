@@ -119,26 +119,31 @@ class Game {
 
     private setupEvents() : void {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
+            // console.log(event.keyCode);
+            // console.log(event.key);
             this.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
             if (this.playerTurn) {
-                let movement: Point;
+                if (event.keyCode == KeyCode.w) {
+                    this.doHeroWait();
+                }
 
-                if (event.keyCode == KeyCode.UpArrow) {
+                let movement: Point;
+                if (event.keyCode == KeyCode.UpArrow || event.keyCode == KeyCode.NumPad8) {
                     movement = new Point(0, -1);
                 }
-                else if (event.keyCode == KeyCode.DownArrow) {
+                else if (event.keyCode == KeyCode.DownArrow || event.keyCode == KeyCode.NumPad2) {
                     movement = new Point(0, 1);
                 }
-                else if (event.keyCode == KeyCode.LeftArrow) {
+                else if (event.keyCode == KeyCode.LeftArrow || event.keyCode == KeyCode.NumPad4) {
                     movement = new Point(-1, 0);
                 }
-                else if (event.keyCode == KeyCode.RightArrow) {
+                else if (event.keyCode == KeyCode.RightArrow || event.keyCode == KeyCode.NumPad6) {
                     movement = new Point(1, 0);
                 }
 
                 if (movement != null) {
-                    this.doHeroAction(movement);
+                    this.doHeroMovement(movement);
 
                     event.preventDefault(); // stop browser scrolling
                 }
@@ -146,7 +151,14 @@ class Game {
         });
     }
 
-    private doHeroAction(movement: Point) : void {
+    private doHeroWait() : void {
+        this.hud.combatLog.push('You waited.');
+        this.playerTurn = false;
+        this.turnEnded();
+        this.doNpcActions();
+    }
+
+    private doHeroMovement(movement: Point) : void {
         let destination = Point.Add(this.hero.position, movement);
         let wall = this.wallLayer.actorAt(destination.x, destination.y);
         let a = this.lifeLayer.actorAt(destination.x, destination.y);
@@ -186,9 +198,10 @@ class Game {
 
         this.playerTurn = false;
         this.turnEnded();
-
         this.doNpcActions();
     }
+
+    private doHeroAction()
 
     private doNpcActions() : void {
         for (let a of this.lifeLayer.getActors()) {
