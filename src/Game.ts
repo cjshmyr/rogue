@@ -305,7 +305,7 @@ class Game {
         else if (a.actorType == ActorType.Item)
             layer = this.itemLayer;
         else
-            alert('addActorToWorld: could not find a cellLayer for type: ' + a.actorType);
+            alert('addActorToWorld: could not find a cellLayer for actor type: ' + a.actorType);
         return layer;
     }
 
@@ -321,7 +321,7 @@ class Game {
         else if (a.actorType == ActorType.Item)
             container = this.itemContainer;
         else
-            alert('addActorToWorld: could not find a container for type: ' + a.actorType);
+            alert('addActorToWorld: could not find a container for actor type: ' + a.actorType);
         return container;
     }
 

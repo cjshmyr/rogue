@@ -5,7 +5,7 @@ class ActorInitializer {
 
         a.hitpoints = 25;
         a.damage = 3;
-        a.visionRange = 10;
+        // a.visionRange = 10;
         a.lightSourceRange = 10;
 
         return a;
@@ -17,7 +17,7 @@ class ActorInitializer {
 
         a.hitpoints = 5;
         a.damage = 2;
-        a.visionRange = 5;
+        // a.visionRange = 5;
         a.hiddenUnderFog = true;
 
         return a;
