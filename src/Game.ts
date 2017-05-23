@@ -2,7 +2,11 @@ window.onload = () => {
     // Load art, start game
     PIXI.loader
         .add('core/art/sprites.json')
-        .load(() => { let game = new Game(); })
+        .load(() => {
+            // Important we put any static reusable bits here
+            TextureAtlas.init();
+            let game = new Game();
+        });
 }
 
 class Game {
@@ -16,7 +20,6 @@ class Game {
     private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer ]; }
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
-    atlas: PIXI.loaders.TextureDictionary;
 
     readonly worldSpriteSize: number = 16; // (16x16)
     readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
@@ -59,44 +62,6 @@ class Game {
         this.gameLoop();
     }
 
-    private loadMap(map: Map) : void {
-        // Setup layers
-        this.pfCollisionLayer = new CellLayer(map.width, map.height);
-        this.itemLayer = new CellLayer(map.width, map.height);
-        this.floorLayer = new CellLayer(map.width, map.height);
-        this.blockLayer = new CellLayer(map.width, map.height);
-        this.lifeLayer = new CellLayer(map.width, map.height);
-
-        // One-time setup
-        for (let a of map.actors) {
-            // Assign hero for easier reference
-            if (a.actorType == ActorType.Hero) {
-                this.hero = a;
-            }
-
-            // Setup their sprites
-            let texture = this.getSpriteTexture(a.name);
-            a.sprite = new PIXI.Sprite(texture);
-
-            // Add to world
-            this.addActorToWorld(a);
-        }
-    }
-
-    // TODO: Define elsewhere
-    private getSpriteTexture(actorName: string) : PIXI.Texture {
-        let file = '';
-        if (actorName == 'Hero') file = 'sprite350';
-        else if (actorName == 'Floor') file = 'sprite210'
-        else if (actorName == 'Wall') file = 'sprite172'
-        else if (actorName == 'Gold') file = 'sprite250'
-        else if (actorName == 'Monster') file = 'sprite378'
-        else if (actorName == 'Torch') file = 'sprite247'
-        else if (actorName == 'Chest') file = 'sprite244'
-        else alert('getSpriteTexture: Unknown actor name -> sprite file: ' + actorName);
-        return this.atlas[file];
-    }
-
     private setupRenderer() : void {
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
         this.renderer = PIXI.autoDetectRenderer(800, 800, { backgroundColor: CanvasColor.Background, view: canvas });
@@ -114,8 +79,6 @@ class Game {
         this.stage.addChild(this.lifeContainer);
         this.stage.addChild(this.minimapContainer);
         this.stage.addChild(this.hudContainer);
-
-        this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
     }
 
     private setupEvents() : void {
@@ -150,6 +113,126 @@ class Game {
                 }
             }
         });
+    }
+
+    private loadMap(map: Map) : void {
+        // Setup layers
+        this.pfCollisionLayer = new CellLayer(map.width, map.height);
+        this.itemLayer = new CellLayer(map.width, map.height);
+        this.floorLayer = new CellLayer(map.width, map.height);
+        this.blockLayer = new CellLayer(map.width, map.height);
+        this.lifeLayer = new CellLayer(map.width, map.height);
+
+        // One-time setup
+        for (let a of map.actors) {
+            // Assign hero for easier reference
+            if (a.actorType == ActorType.Hero) {
+                this.hero = a;
+            }
+
+            // Add to world
+            this.addActorToWorld(a);
+        }
+    }
+
+    private addActorToWorld(a: Actor) : void {
+        let initPosition = a.position;
+
+        // Add to appropriate layer
+        let layer = this.getCellLayerForActor(a);
+        layer.addActor(a, initPosition.x, initPosition.y);
+
+        // Add to collision layer if appropriate
+        if (a.blocksMovement) {
+            this.pfCollisionLayer.addActor(a, initPosition.x, initPosition.y);
+        }
+
+        // Add their sprite
+        let container = this.getContainerForActor(a);
+        container.addChild(a.animation.sprite);
+
+        // Update the sprite's render position
+        this.updateSpriteRenderPosition(a)
+    }
+
+    private updateActorPosition(a: Actor, newPosition: Point) : void {
+        // Update the actor map position
+        let layer = this.getCellLayerForActor(a);
+        layer.moveActor(a, newPosition.x, newPosition.y);
+
+        // Add to collision layer if appropriate
+        if (a.blocksMovement) {
+            this.pfCollisionLayer.moveActor(a, newPosition.x, newPosition.y);
+        }
+
+        // Update the hero's grid location
+        a.position = newPosition;
+
+        // Update the sprite's render position
+        this.updateSpriteRenderPosition(a)
+    }
+
+    private removeActorFromWorld(a: Actor) : void {
+        // Remove from actor layer
+        let layer = this.getCellLayerForActor(a);
+        layer.removeActor(a, a.position.x, a.position.y);
+
+        // Remove from collision layer if appropriate
+        if (a.blocksMovement) {
+            this.pfCollisionLayer.removeActor(a, a.position.x, a.position.y);
+        }
+
+        // Remove their sprite
+        let container = this.getContainerForActor(a);
+        container.removeChild(a.animation.sprite);
+    }
+
+    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
+    private getCellLayerForActor(a: Actor) : CellLayer {
+        let layer: CellLayer = null;
+        if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
+            layer = this.lifeLayer;
+        else if (a.actorType == ActorType.Floor)
+            layer = this.floorLayer;
+        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
+            layer = this.blockLayer;
+        else if (a.actorType == ActorType.Item)
+            layer = this.itemLayer;
+        else
+            alert('addActorToWorld: could not find a cellLayer for actor type: ' + a.actorType);
+        return layer;
+    }
+
+    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
+    private getContainerForActor(a: Actor) : PIXI.Container {
+        let container: PIXI.Container = null;
+        if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
+            container = this.lifeContainer;
+        else if (a.actorType == ActorType.Floor)
+            container = this.floorContainer;
+        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
+            container = this.blockContainer;
+        else if (a.actorType == ActorType.Item)
+            container = this.itemContainer;
+        else
+            alert('addActorToWorld: could not find a container for actor type: ' + a.actorType);
+        return container;
+    }
+
+    private updateSpriteRenderPosition(a: Actor) : void { // TODO: Will need refactor with camera/animation changes.
+        let p = this.getSpriteRenderPosition(a);
+        a.animation.sprite.x = p.x;
+        a.animation.sprite.y = p.y;
+    }
+
+    private getSpriteRenderPosition(a: Actor) : Point {
+        if (a.position == null) {
+            var broken = true;
+        }
+
+        let rX = a.position.x * this.worldSpriteSize;
+        let rY = a.position.y * this.worldSpriteSize;
+        return new Point(rX, rY);
     }
 
     private doHeroWait() : void {
@@ -261,106 +344,6 @@ class Game {
         this.minimap.updateMinimap(this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
     }
 
-    private addActorToWorld(a: Actor) : void {
-        let initPosition = a.position;
-
-        // Add to appropriate layer
-        let layer = this.getCellLayerForActor(a);
-        layer.addActor(a, initPosition.x, initPosition.y);
-
-        // Add to collision layer if appropriate
-        if (a.blocksMovement) {
-            this.pfCollisionLayer.addActor(a, initPosition.x, initPosition.y);
-        }
-
-        // Add their sprite
-        let container = this.getContainerForActor(a);
-        container.addChild(a.sprite);
-
-        // Update the sprite's render position
-        this.updateSpriteRenderPosition(a)
-    }
-
-    private updateActorPosition(a: Actor, newPosition: Point) : void {
-        // Update the actor map position
-        let layer = this.getCellLayerForActor(a);
-        layer.moveActor(a, newPosition.x, newPosition.y);
-
-        // Add to collision layer if appropriate
-        if (a.blocksMovement) {
-            this.pfCollisionLayer.moveActor(a, newPosition.x, newPosition.y);
-        }
-
-        // Update the hero's grid location
-        a.position = newPosition;
-
-        // Update the sprite's render position
-        this.updateSpriteRenderPosition(a)
-    }
-
-    private removeActorFromWorld(a: Actor) : void {
-        // Remove from actor layer
-        let layer = this.getCellLayerForActor(a);
-        layer.removeActor(a, a.position.x, a.position.y);
-
-        // Remove from collision layer if appropriate
-        if (a.blocksMovement) {
-            this.pfCollisionLayer.removeActor(a, a.position.x, a.position.y);
-        }
-
-        // Remove their sprite
-        let container = this.getContainerForActor(a);
-        container.removeChild(a.sprite);
-    }
-
-    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
-    private getCellLayerForActor(a: Actor) : CellLayer {
-        let layer: CellLayer = null;
-        if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
-            layer = this.lifeLayer;
-        else if (a.actorType == ActorType.Floor)
-            layer = this.floorLayer;
-        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
-            layer = this.blockLayer;
-        else if (a.actorType == ActorType.Item)
-            layer = this.itemLayer;
-        else
-            alert('addActorToWorld: could not find a cellLayer for actor type: ' + a.actorType);
-        return layer;
-    }
-
-    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
-    private getContainerForActor(a: Actor) : PIXI.Container {
-        let container: PIXI.Container = null;
-        if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
-            container = this.lifeContainer;
-        else if (a.actorType == ActorType.Floor)
-            container = this.floorContainer;
-        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
-            container = this.blockContainer;
-        else if (a.actorType == ActorType.Item)
-            container = this.itemContainer;
-        else
-            alert('addActorToWorld: could not find a container for actor type: ' + a.actorType);
-        return container;
-    }
-
-    private updateSpriteRenderPosition(a: Actor) : void { // TODO: Will need refactor with camera/animation changes.
-        let p = this.getSpriteRenderPosition(a);
-        a.sprite.x = p.x;
-        a.sprite.y = p.y;
-    }
-
-    private getSpriteRenderPosition(a: Actor) : Point {
-        if (a.position == null) {
-            var broken = true;
-        }
-
-        let rX = a.position.x * this.worldSpriteSize;
-        let rY = a.position.y * this.worldSpriteSize;
-        return new Point(rX, rY);
-    }
-
     private getAllLayerActors() : Actor[] {
         let actors: Actor[] = [];
         for (let l of this.worldLayers()) {
@@ -390,10 +373,10 @@ class Game {
                 continue;
 
             // Set visible if they're not hidden under fog
-            a.sprite.visible = !a.hiddenUnderFog;
+            a.animation.sprite.visible = !a.hiddenUnderFog;
 
             // Set appropriate tint (fog, shroud)
-            a.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
+            a.animation.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
         // Dynamic lighting (origin to annulus)
@@ -426,10 +409,10 @@ class Game {
                         }
 
                         // We don't want to block the object itself from being lit, just ones after it.
-                        if (a2.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
-                            a2.sprite.tint = intensity;
+                        if (a2.animation.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
+                            a2.animation.sprite.tint = intensity;
                         }
-                        a2.sprite.visible = true;
+                        a2.animation.sprite.visible = true;
                         a2.revealed = true;
                     }
                 }
@@ -466,17 +449,25 @@ class Game {
 
             if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
                 a.inRenderBounds = true;
-                a.sprite.visible = true;
+                a.animation.sprite.visible = true;
             }
             else {
                 a.inRenderBounds = false;
-                a.sprite.visible = false;
+                a.animation.sprite.visible = false;
             }
         }
     }
 
+    tick: number = 0;
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
+
+        for (let a of this.getAllLayerActors()) { // Perf: Potential performance hit
+            a.animation.Tick(this.tick);
+        }
+
         this.renderer.render(this.stage);
+
+        this.tick++;
     }
 }
