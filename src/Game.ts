@@ -2,7 +2,11 @@ window.onload = () => {
     // Load art, start game
     PIXI.loader
         .add('core/art/sprites.json')
-        .load(() => { let game = new Game(); })
+        .load(() => {
+            // Important we put any static reusable bits here
+            GameTextures.Init();
+            let game = new Game();
+        });
 }
 
 class Game {
@@ -16,8 +20,6 @@ class Game {
     private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer ]; }
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
-
-    frameMap: FrameMap;
 
     readonly worldSpriteSize: number = 16; // (16x16)
     readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
@@ -77,9 +79,6 @@ class Game {
         this.stage.addChild(this.lifeContainer);
         this.stage.addChild(this.minimapContainer);
         this.stage.addChild(this.hudContainer);
-
-        let atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
-        this.frameMap = new FrameMap(atlas);
     }
 
     private setupEvents() : void {
@@ -130,9 +129,6 @@ class Game {
             if (a.actorType == ActorType.Hero) {
                 this.hero = a;
             }
-
-            // Grant them sprites/animations
-            a.initializeAnimation(this.frameMap);
 
             // Add to world
             this.addActorToWorld(a);

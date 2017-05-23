@@ -42,10 +42,7 @@ class Actor {
         this.name = name;
         this.position = position;
         this.blocksMovement = blocksMovement;
-    }
-
-    initializeAnimation(frameMap: FrameMap) {
-        this.animation = new Animation(frameMap, this.name);
+        this.animation = new Animation(name);
     }
 
     inflictDamage(amount: number) : void {
