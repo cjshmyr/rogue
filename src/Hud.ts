@@ -29,7 +29,7 @@ class Hud {
         playerTurn: boolean,
         pfCollisionLayer: CellLayer,
         floorLayer: CellLayer,
-        wallLayer: CellLayer,
+        blockLayer: CellLayer,
         lifeLayer: CellLayer,
         itemLayer: CellLayer
     ) : void {
@@ -53,7 +53,7 @@ class Hud {
             + '\n\n-- layers --'
             + '\nCollision: ' + pfCollisionLayer.actorCount + '/' + pfCollisionLayer.count
             + '\nFloor: ' + floorLayer.actorCount + '/' + floorLayer.count
-            + '\nWall: ' + wallLayer.actorCount + '/' + wallLayer.count
+            + '\nBlock: ' + blockLayer.actorCount + '/' + blockLayer.count
             + '\nLife: ' + lifeLayer.actorCount + '/' + lifeLayer.count
             + '\nItem: ' + itemLayer.actorCount + '/' + itemLayer.count
     }

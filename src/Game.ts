@@ -10,10 +10,10 @@ class Game {
     renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
     stage: PIXI.Container;
     floorContainer: PIXI.Container;
-    wallContainer: PIXI.Container;
+    blockContainer: PIXI.Container;
     itemContainer: PIXI.Container;
     lifeContainer: PIXI.Container;
-    private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.wallContainer, this.itemContainer, this.lifeContainer ]; }
+    private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer ]; }
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
     atlas: PIXI.loaders.TextureDictionary;
@@ -28,10 +28,10 @@ class Game {
 
     // Game
     floorLayer: CellLayer;
-    wallLayer: CellLayer;
+    blockLayer: CellLayer;
     itemLayer: CellLayer;
     lifeLayer: CellLayer;
-    private worldLayers() : CellLayer[] { return [ this.floorLayer, this.wallLayer, this.itemLayer, this.lifeLayer ] }
+    private worldLayers() : CellLayer[] { return [ this.floorLayer, this.blockLayer, this.itemLayer, this.lifeLayer ] }
     pfCollisionLayer: CellLayer; // For pathfinding only
     hero: Actor;
     playerTurn: boolean = true;
@@ -64,7 +64,7 @@ class Game {
         this.pfCollisionLayer = new CellLayer(map.width, map.height);
         this.itemLayer = new CellLayer(map.width, map.height);
         this.floorLayer = new CellLayer(map.width, map.height);
-        this.wallLayer = new CellLayer(map.width, map.height);
+        this.blockLayer = new CellLayer(map.width, map.height);
         this.lifeLayer = new CellLayer(map.width, map.height);
 
         // One-time setup
@@ -102,14 +102,14 @@ class Game {
         this.renderer = PIXI.autoDetectRenderer(800, 800, { backgroundColor: CanvasColor.Background, view: canvas });
         this.stage = new PIXI.Container();
         this.floorContainer = new PIXI.Container();
-        this.wallContainer = new PIXI.Container();
+        this.blockContainer = new PIXI.Container();
         this.itemContainer = new PIXI.Container();
         this.lifeContainer = new PIXI.Container();
         this.minimapContainer = new PIXI.Container();
         this.hudContainer = new PIXI.Container();
 
         this.stage.addChild(this.floorContainer);
-        this.stage.addChild(this.wallContainer);
+        this.stage.addChild(this.blockContainer);
         this.stage.addChild(this.itemContainer);
         this.stage.addChild(this.lifeContainer);
         this.stage.addChild(this.minimapContainer);
@@ -161,7 +161,7 @@ class Game {
 
     private doHeroMovement(movement: Point) : void {
         let destination = Point.Add(this.hero.position, movement);
-        let blocker = this.wallLayer.actorAt(destination.x, destination.y); // TODO: Rename from wall layer to block layer?
+        let blocker = this.blockLayer.actorAt(destination.x, destination.y);
         let a = this.lifeLayer.actorAt(destination.x, destination.y);
         let item = this.itemLayer.actorAt(destination.x, destination.y);
 
@@ -225,11 +225,11 @@ class Game {
         // TODO: Attempt to move towards player
         // This is insanely stupid.
         let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
-        let wall = this.wallLayer.actorAt(destination.x, destination.y);
+        let blocker = this.blockLayer.actorAt(destination.x, destination.y);
         let a = this.lifeLayer.actorAt(destination.x, destination.y);
 
         let allowMove: boolean = true;
-        if (wall) {
+        if (blocker) {
             allowMove = false;
         }
         else if (a) {
@@ -257,8 +257,8 @@ class Game {
     private turnEnded() : void {
         this.centerCameraOnHero();
         this.applyLightSources();
-        this.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.wallLayer, this.lifeLayer, this.itemLayer);
-        this.minimap.updateMinimap(this.floorLayer, this.wallLayer, this.lifeLayer, this.itemLayer);
+        this.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
+        this.minimap.updateMinimap(this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
     }
 
     private addActorToWorld(a: Actor) : void {
@@ -321,7 +321,7 @@ class Game {
         else if (a.actorType == ActorType.Floor)
             layer = this.floorLayer;
         else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
-            layer = this.wallLayer;
+            layer = this.blockLayer;
         else if (a.actorType == ActorType.Item)
             layer = this.itemLayer;
         else
@@ -337,7 +337,7 @@ class Game {
         else if (a.actorType == ActorType.Floor)
             container = this.floorContainer;
         else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
-            container = this.wallContainer;
+            container = this.blockContainer;
         else if (a.actorType == ActorType.Item)
             container = this.itemContainer;
         else

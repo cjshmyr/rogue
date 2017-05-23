@@ -8,7 +8,7 @@ class Minimap {
 
     updateMinimap(
         floorLayer: CellLayer,
-        wallLayer: CellLayer,
+        blockLayer: CellLayer,
         lifeLayer: CellLayer,
         itemLayer: CellLayer
     ) : void {
@@ -26,7 +26,7 @@ class Minimap {
             }
         }
 
-        for (let a of wallLayer.getActors()) {
+        for (let a of blockLayer.getActors()) {
             if (a.revealed) {
                 this.graphics.beginFill(HudColor.Maroon, opacity);
                 this.graphics.lineColor = HudColor.Maroon;
