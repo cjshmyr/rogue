@@ -17,7 +17,7 @@ class Game {
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
 
-    spriteMap: SpriteMap;
+    frameMap: FrameMap;
 
     readonly worldSpriteSize: number = 16; // (16x16)
     readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
@@ -79,7 +79,7 @@ class Game {
         this.stage.addChild(this.hudContainer);
 
         let atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
-        this.spriteMap = new SpriteMap(atlas);
+        this.frameMap = new FrameMap(atlas);
     }
 
     private setupEvents() : void {
@@ -131,8 +131,8 @@ class Game {
                 this.hero = a;
             }
 
-            // Grant them a sprite
-            a.initializeSprite(this.spriteMap);
+            // Grant them sprites/animations
+            a.initializeAnimation(this.frameMap);
 
             // Add to world
             this.addActorToWorld(a);
@@ -153,7 +153,7 @@ class Game {
 
         // Add their sprite
         let container = this.getContainerForActor(a);
-        container.addChild(a.sprite);
+        container.addChild(a.animation.sprite);
 
         // Update the sprite's render position
         this.updateSpriteRenderPosition(a)
@@ -188,7 +188,7 @@ class Game {
 
         // Remove their sprite
         let container = this.getContainerForActor(a);
-        container.removeChild(a.sprite);
+        container.removeChild(a.animation.sprite);
     }
 
     // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
@@ -225,8 +225,8 @@ class Game {
 
     private updateSpriteRenderPosition(a: Actor) : void { // TODO: Will need refactor with camera/animation changes.
         let p = this.getSpriteRenderPosition(a);
-        a.sprite.x = p.x;
-        a.sprite.y = p.y;
+        a.animation.sprite.x = p.x;
+        a.animation.sprite.y = p.y;
     }
 
     private getSpriteRenderPosition(a: Actor) : Point {
@@ -377,10 +377,10 @@ class Game {
                 continue;
 
             // Set visible if they're not hidden under fog
-            a.sprite.visible = !a.hiddenUnderFog;
+            a.animation.sprite.visible = !a.hiddenUnderFog;
 
             // Set appropriate tint (fog, shroud)
-            a.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
+            a.animation.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
         // Dynamic lighting (origin to annulus)
@@ -413,10 +413,10 @@ class Game {
                         }
 
                         // We don't want to block the object itself from being lit, just ones after it.
-                        if (a2.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
-                            a2.sprite.tint = intensity;
+                        if (a2.animation.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
+                            a2.animation.sprite.tint = intensity;
                         }
-                        a2.sprite.visible = true;
+                        a2.animation.sprite.visible = true;
                         a2.revealed = true;
                     }
                 }
@@ -453,17 +453,25 @@ class Game {
 
             if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
                 a.inRenderBounds = true;
-                a.sprite.visible = true;
+                a.animation.sprite.visible = true;
             }
             else {
                 a.inRenderBounds = false;
-                a.sprite.visible = false;
+                a.animation.sprite.visible = false;
             }
         }
     }
 
+    tick: number = 0;
     private gameLoop = () => {
         requestAnimationFrame(this.gameLoop);
+
+        for (let a of this.getAllLayerActors()) { // Perf: Potential performance hit
+            a.animation.Tick(this.tick);
+        }
+
         this.renderer.render(this.stage);
+
+        this.tick++;
     }
 }

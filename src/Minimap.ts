@@ -45,7 +45,7 @@ class Minimap {
         }
 
         for (let a of lifeLayer.getActors()) {
-            if (a.revealed && a.sprite.visible) {
+            if (a.revealed && a.animation.sprite.visible) {
                 let color: HudColor = HudColor.Red;
                 if (a.actorType == ActorType.Hero) {
                     color = HudColor.Green;

@@ -11,8 +11,8 @@ class Actor {
     inventory: Inventory;
 
     // Rendering
-    spriteMap: SpriteMap;
-    sprite: PIXI.Sprite;
+    animation: Animation;
+
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
     inRenderBounds: boolean = false; // Is in camera bounds
 
@@ -44,9 +44,8 @@ class Actor {
         this.blocksMovement = blocksMovement;
     }
 
-    initializeSprite(spriteMap: SpriteMap) {
-        this.spriteMap = spriteMap;
-        this.sprite = spriteMap.getSprite(this.name);
+    initializeAnimation(frameMap: FrameMap) {
+        this.animation = new Animation(frameMap, this.name);
     }
 
     inflictDamage(amount: number) : void {
@@ -59,9 +58,8 @@ class Actor {
 
     openChest() : Item {
         this.chestOpen = true;
-        // TODO: Update sprite
 
-        // this.sprite = SpriteHelper.();
+        this.animation.setState('idle2');
 
         return this.chestItem;
     }
