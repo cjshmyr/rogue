@@ -46,6 +46,7 @@ class Hud {
 
         this.infoHud.text = 'Health: ' + hero.hitpoints
             + '\nGold: ' + hero.gold
+            + '\nItems: ' + hero.inventory.items.length
             + '\n\n-- debug --'
             + '\nLast key: ' + this.lastKeyPressed
             + '\nHero position (x,y): ' + hero.position.x + ',' + hero.position.y

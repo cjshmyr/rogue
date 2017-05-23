@@ -11,6 +11,7 @@ class Actor {
     inventory: Inventory;
 
     // Rendering
+    spriteMap: SpriteMap;
     sprite: PIXI.Sprite;
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
     inRenderBounds: boolean = false; // Is in camera bounds
@@ -43,6 +44,11 @@ class Actor {
         this.blocksMovement = blocksMovement;
     }
 
+    initializeSprite(spriteMap: SpriteMap) {
+        this.spriteMap = spriteMap;
+        this.sprite = spriteMap.getSprite(this.name);
+    }
+
     inflictDamage(amount: number) : void {
         this.hitpoints -= amount;
     }
@@ -53,6 +59,27 @@ class Actor {
 
     openChest() : Item {
         this.chestOpen = true;
+        // TODO: Update sprite
+
+        // this.sprite = SpriteHelper.();
+
         return this.chestItem;
     }
 }
+
+/*
+idea:
+    have the game subscribe to animations on a Tick basis
+
+    on each tick, loop through each actor with sprite = dirty
+
+    where the sprite = dirty, then update its art
+
+    how do we know which art to use? the actor should have a property with the desired texture.
+
+    getSpriteTexture() : {
+        check what type we are
+
+        if hero, return a suggested hero sprite?
+    }
+*/
