@@ -1,12 +1,14 @@
 // TODO: Want to combine this stuff into various objects later, then do json->object loading
 class Actor {
-    name: string = 'undefined';
+    readonly name: string = 'undefined actor';
     position: Point;
     actorType: ActorType = ActorType.Undefined; // TODO: Make readonly?
 
     hitpoints: number = 0;
     damage: number = 0;
-    gold: number = 0;
+
+    // Inventory
+    inventory: Inventory;
 
     // Rendering
     sprite: PIXI.Sprite;
@@ -28,6 +30,13 @@ class Actor {
     // Collision
     readonly blocksMovement: boolean = false; // Does it block movement? <-- NOTE: Cannot be changed (yet), because the layer wouldn't understand it.
 
+    // Gold piles
+    gold: number = 0;
+
+    // Chests
+    chestItem: Item;
+    chestOpen: boolean = false;
+
     constructor(name: string, position: Point, blocksMovement: boolean = false) {
         this.name = name;
         this.position = position;
@@ -40,5 +49,10 @@ class Actor {
 
     isDead() : boolean {
         return this.hitpoints <= 0;
+    }
+
+    openChest() : Item {
+        this.chestOpen = true;
+        return this.chestItem;
     }
 }

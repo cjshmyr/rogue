@@ -92,6 +92,7 @@ class Game {
         else if (actorName == 'Gold') file = 'sprite250'
         else if (actorName == 'Monster') file = 'sprite378'
         else if (actorName == 'Torch') file = 'sprite247'
+        else if (actorName == 'Chest') file = 'sprite244'
         else alert('getSpriteTexture: Unknown actor name -> sprite file: ' + actorName);
         return this.atlas[file];
     }
@@ -160,13 +161,21 @@ class Game {
 
     private doHeroMovement(movement: Point) : void {
         let destination = Point.Add(this.hero.position, movement);
-        let wall = this.wallLayer.actorAt(destination.x, destination.y);
+        let blocker = this.wallLayer.actorAt(destination.x, destination.y); // TODO: Rename from wall layer to block layer?
         let a = this.lifeLayer.actorAt(destination.x, destination.y);
         let item = this.itemLayer.actorAt(destination.x, destination.y);
 
         let allowMove: boolean = true;
-        if (wall) {
-            this.hud.combatLog.push('You cannot move there.');
+        if (blocker) {
+            if (blocker.actorType == ActorType.Wall) {
+                this.hud.combatLog.push('You cannot move there.');
+            }
+            else if (blocker.actorType == ActorType.Chest && !blocker.chestOpen) {
+                let item = blocker.openChest();
+                this.hero.inventory.addItem(item);
+                this.hud.combatLog.push('You opened a chest...  found ' + item.name + '!');
+            }
+
             allowMove = false;
         }
         else if (a) {
@@ -186,7 +195,7 @@ class Game {
         else if (item) {
             // For now, assume it's gold
             // Pick it up / give gold
-            this.hero.gold += item.gold; // HACKY: it should be a different property.
+            this.hero.inventory.gold += item.gold;
 
             this.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
             this.removeActorFromWorld(item);
@@ -200,8 +209,6 @@ class Game {
         this.turnEnded();
         this.doNpcActions();
     }
-
-    private doHeroAction()
 
     private doNpcActions() : void {
         for (let a of this.lifeLayer.getActors()) {
@@ -313,7 +320,7 @@ class Game {
             layer = this.lifeLayer;
         else if (a.actorType == ActorType.Floor)
             layer = this.floorLayer;
-        else if (a.actorType == ActorType.Wall)
+        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
             layer = this.wallLayer;
         else if (a.actorType == ActorType.Item)
             layer = this.itemLayer;
@@ -329,7 +336,7 @@ class Game {
             container = this.lifeContainer;
         else if (a.actorType == ActorType.Floor)
             container = this.floorContainer;
-        else if (a.actorType == ActorType.Wall)
+        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
             container = this.wallContainer;
         else if (a.actorType == ActorType.Item)
             container = this.itemContainer;

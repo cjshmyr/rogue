@@ -30,7 +30,8 @@ enum ActorType {
     Npc,
     Floor,
     Wall,
-    Item
+    Item,
+    Chest
 }
 
 enum HeroAction {

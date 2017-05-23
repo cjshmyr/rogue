@@ -3,6 +3,8 @@ class ActorInitializer {
         let a = new Actor('Hero', position, true);
         a.actorType = ActorType.Hero;
 
+        a.inventory = new Inventory();
+
         a.hitpoints = 25;
         a.damage = 3;
         // a.visionRange = 10;
@@ -58,4 +60,12 @@ class ActorInitializer {
         return a;
     }
 
+    static NewChest(position: Point) : Actor {
+        let a = new Actor('Chest', position, true);
+        a.actorType = ActorType.Chest;
+
+        a.chestItem = new Item();
+
+        return a;
+    }
 }
