@@ -16,3 +16,11 @@ class Game {
         // this.minimap = new Minimap();
     }
 }
+
+/*
+Bugs discovered thus far:
+- Sprite may flicker when moving fast
+
+Not sure of yet:
+- If world/renderer can see each other in sync here
+*/

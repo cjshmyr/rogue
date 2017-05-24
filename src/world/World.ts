@@ -34,7 +34,7 @@ class World {
         this.tickNumber++;
 
         // if (this.tickNumber == 300) {
-        //     this.addActorToWorld(ActorInitializer.NewMonster(new Point(2,2)));
+        //     this.addActorToWorld(ActorInitializer.NewMonster(new Point(2,2))); // Bug <- it has no visibility, or bad light source tint.
         // }
     }
 
