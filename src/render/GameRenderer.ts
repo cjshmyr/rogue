@@ -94,31 +94,35 @@ class GameRenderer {
                 let container = this.getContainerForActor(a);
                 container.addChild(anim.sprite);
             }
-            else if (!a.isInWorld && anim) {
-                for (let anim of this.actorAnimations) {
-                    if (anim.actor.id == a.id) {
-                        let index = this.actorAnimations.indexOf(anim);
-                        if (index > -1) {
-                            this.actorAnimations.splice(index, 1);
-                        }
-
-                        // Remove from container
-                        let container = this.getContainerForActor(a);
-                        container.removeChild(anim.sprite);
-                    }
-                }
-            }
         }
 
         for (let m of this.actorAnimations) {
-            // Update render positions (just in case they've moved) -- this will likely change later.
-            let rPos = this.getSpriteRenderPosition(m.actor);
-            m.sprite.position.x = rPos.x;
-            m.sprite.position.y = rPos.y;
+            if (!m.actor.isInWorld) {
+                let index = this.actorAnimations.indexOf(m);
+                if (index > -1) {
+                    this.actorAnimations.splice(index, 1);
+                }
+
+                // Remove from container
+                let container = this.getContainerForActor(m.actor);
+                container.removeChild(m.sprite);
+            }
+            else {
+                // Update render positions (just in case they've moved) -- this will likely change later.
+                let rPos = this.getSpriteRenderPosition(m.actor);
+                m.sprite.position.x = rPos.x;
+                m.sprite.position.y = rPos.y;
+
+                // Set light source visiblity/tint
+                m.sprite.visible = m.actor.renderVisible;
+                m.sprite.tint = m.actor.renderLightSourceTint;
+            }
 
             // Tick the animation
             m.tick(this.tickNumber);
         }
+
+        this.centerCameraOnHero();
 
         this.renderer.render(this.stage);
 
@@ -144,5 +148,31 @@ class GameRenderer {
         let rX = a.position.x * this.worldSpriteSize;
         let rY = a.position.y * this.worldSpriteSize;
         return new Point(rX, rY);
+    }
+
+    private centerCameraOnHero() : void {
+        // center on hero (not exactly center yet)
+        let hero = this.game.world.hero;
+        let heroPos = this.getSpriteRenderPosition(hero);
+        for (let c of this.worldContainers()) {
+            c.x = (this.renderer.width / 2) - heroPos.x;
+            c.y = (this.renderer.height / 2) - heroPos.y;
+        }
+
+        // don't render things outside of viewport
+        let topLeft = heroPos.x - ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
+        let topRight = heroPos.x + ((this.worldTileDisplayWidth / 2) * this.worldSpriteSize);
+        let bottomLeft = heroPos.y - ((this.worldTileDisplayHeight / 2) * this.worldSpriteSize);
+
+        for (let m of this.actorAnimations) {
+            let pos = this.getSpriteRenderPosition(m.actor);
+
+            if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
+                m.sprite.visible = true;
+            }
+            else {
+                m.sprite.visible = false;
+            }
+        }
     }
 }

@@ -30,8 +30,14 @@ class World {
         setInterval(this.tick, (1 / 60) * 1000); // 60 ticks/sec
     }
 
-    tick(tick: number) : void {
+    private tick = () => {
         this.tickNumber++;
+        // let self = this;
+        // this.game.updateWorldTick(self);
+
+        if (this.tickNumber == 300) {
+            this.addActorToWorld(ActorInitializer.NewMonster(new Point(2,2)));
+        }
     }
 
     private setupEvents() : void {
@@ -254,7 +260,7 @@ class World {
 
     private turnEnded() : void {
         // this.centerCameraOnHero();
-        // this.applyLightSources();
+        this.applyLightSources();
         // this.game.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
         // this.game.minimap.updateMinimap(this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
     }
@@ -276,5 +282,69 @@ class World {
             }
         }
         return actors;
+    }
+
+    private applyLightSources() : void {
+        let allActors = this.getAllLayerActors();
+
+        // Dim/shroud everything, then apply sources
+        for (let a of allActors) {
+            // Set visible if they're not hidden under fog
+            a.renderVisible = !a.hiddenUnderFog;
+
+            // Set appropriate tint (fog, shroud)
+            a.renderLightSourceTint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
+        }
+
+        // Dynamic lighting (origin to annulus)
+        // Using a 3 cell annulus to make close vertical walls light up better (test with range 10). May want to scale with a formula instead.
+        for (let a of allActors) {
+            if (a.lightSourceRange <= 0) { // Actor doesn't provide any light.
+                continue;
+            }
+
+            if (a.actorType != ActorType.Hero && !a.revealed && !a.lightSourceAlwaysVisible) { // Non-hero actor hasn't been revealed yet, and we don't want to always show it
+                continue;
+            }
+
+            for (let annulusPoint of Geometry.pointsInAnnulus(a.position, a.lightSourceRange, 3)) {
+                let line = Geometry.pointsInLine(a.position, annulusPoint);
+
+                let obstructing = false;
+                // Begin from light source origin
+                for (let linePoint of line) {
+
+                    if (obstructing)
+                        break;
+
+                    let distance = Point.Distance(a.position, linePoint);
+                    let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
+
+                    for (let a2 of this.getAllLayerActorsAt(linePoint.x, linePoint.y)) {
+                        if (a2.blocksLight) {
+                            obstructing = true;
+                        }
+
+                        // We don't want to block the object itself from being lit, just ones after it.
+                        if (a2.renderLightSourceTint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
+                            a2.renderLightSourceTint = intensity;
+                        }
+                        a2.renderVisible = true;
+                        a2.revealed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private getLightSourceIntensity(distance: number, maxDistance: number) : LightSourceTint {
+        let i = distance / maxDistance
+
+        if (i <= 0.75) return LightSourceTint.Visible1;
+        if (i <= 0.80) return LightSourceTint.Visible2;
+        if (i <= 0.85) return LightSourceTint.Visible3;
+        if (i <= 0.90) return LightSourceTint.Visible4;
+        if (i <= 0.95) return LightSourceTint.Visible5;
+        else return LightSourceTint.Visible6;
     }
 }
