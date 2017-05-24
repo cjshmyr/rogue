@@ -1,22 +1,22 @@
 class GameRenderer {
-    readonly game: Game;
-    tickNumber: number;
+    private readonly game: Game;
+    tickNumber: number = 0;
 
     // Rendering
-    renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
-    stage: PIXI.Container;
-    floorContainer: PIXI.Container;
-    blockContainer: PIXI.Container;
-    itemContainer: PIXI.Container;
-    lifeContainer: PIXI.Container;
+    private renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
+    private stage: PIXI.Container;
+    private floorContainer: PIXI.Container;
+    private blockContainer: PIXI.Container;
+    private itemContainer: PIXI.Container;
+    private lifeContainer: PIXI.Container;
     private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer ]; }
-    minimapContainer: PIXI.Container;
-    hudContainer: PIXI.Container;
-    atlas: PIXI.loaders.TextureDictionary;
+    private minimapContainer: PIXI.Container;
+    private hudContainer: PIXI.Container;
+    private atlas: PIXI.loaders.TextureDictionary;
 
-    readonly worldSpriteSize: number = 16; // (16x16)
-    readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
-    readonly worldTileDisplayHeight: number = 50; // Matches to canvas size (800)
+    private readonly worldSpriteSize: number = 16; // (16x16)
+    private readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
+    private readonly worldTileDisplayHeight: number = 50; // Matches to canvas size (800)
 
     // HUD / Minimap
     // hud: Hud
@@ -29,20 +29,12 @@ class GameRenderer {
         PIXI.loader
             .add('core/art/sprites.json')
             .load(() => {
-                GameTextures.Init();
+                GameTextures.initialize();
                 this.initialize();
             });
     }
 
-    private nextFrame = () => {
-        requestAnimationFrame(this.nextFrame);
-
-        this.renderer.render(this.stage);
-
-        this.tickNumber++;
-    }
-
-    initialize() : void {
+    private initialize() : void {
         // Setup
         let canvas = <HTMLCanvasElement> document.getElementById("gameCanvas");
         this.renderer = PIXI.autoDetectRenderer(800, 800, { backgroundColor: CanvasColor.Background, view: canvas });
@@ -76,41 +68,63 @@ class GameRenderer {
         this.nextFrame();
     }
 
+    private actorAnimations: ActorAnimation[] = [];
 
-    actorAnimations: ActorAnimation[] = [];
-    actorAdded(a: Actor) : void {
-        let anim = new Animation(a.name);
-        let actorAnim = new ActorAnimation(a, anim);
-        this.actorAnimations.push(actorAnim);
-
-        // Add to stage
-        let container = this.getContainerForActor(a);
-        container.addChild(actorAnim.animation.sprite);
-
-        // Set render position
-        this.updateSpriteRenderPosition(actorAnim);
+    private getActorAnimation(a: Actor) : ActorAnimation {
+        for (let anim of this.actorAnimations) {
+            if (anim.actor.id == a.id) {
+                return anim;
+            }
+        }
+        return null;
     }
 
-    actorRemoved(a: Actor) : void {
+    private nextFrame = () => {
+        requestAnimationFrame(this.nextFrame);
 
+        let w = this.game.world;
+        for (let a of w.getAllLayerActors()) {
+            let anim = this.getActorAnimation(a);
+
+            if (a.isInWorld && !anim) {
+                let anim = new ActorAnimation(a);
+                this.actorAnimations.push(anim);
+
+                // Add to proper container
+                let container = this.getContainerForActor(a);
+                container.addChild(anim.sprite);
+            }
+            else if (!a.isInWorld && anim) {
+                for (let anim of this.actorAnimations) {
+                    if (anim.actor.id == a.id) {
+                        let index = this.actorAnimations.indexOf(anim);
+                        if (index > -1) {
+                            this.actorAnimations.splice(index, 1);
+                        }
+
+                        // Remove from container
+                        let container = this.getContainerForActor(a);
+                        container.removeChild(anim.sprite);
+                    }
+                }
+            }
+        }
+
+        for (let m of this.actorAnimations) {
+            // Update render positions (just in case they've moved) -- this will likely change later.
+            let rPos = this.getSpriteRenderPosition(m.actor);
+            m.sprite.position.x = rPos.x;
+            m.sprite.position.y = rPos.y;
+
+            // Tick the animation
+            m.tick(this.tickNumber);
+        }
+
+        this.renderer.render(this.stage);
+
+        this.tickNumber++;
     }
 
-    private getSpriteTexture(animationName: string) : PIXI.Texture {
-        let file = '';
-
-        if (animationName == 'Hero-idle') file = 'sprite350';
-        else if (animationName == 'Floor-idle') file = 'sprite210';
-        else if (animationName == 'Wall-idle') file = 'sprite172';
-        else if (animationName == 'Gold-idle') file = 'sprite250';
-        else if (animationName == 'Monster-idle') file = 'sprite378';
-        else if (animationName == 'Torch-idle') file = 'sprite247';
-        else if (animationName == 'Chest-idle') file = 'sprite244';
-        else if (animationName == 'Chest-idle2') file = 'sprite245';
-        else alert('getSpriteTexture: Unknown animation name -> sprite file: ' + animationName);
-        return this.atlas[file];
-    }
-
-    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
     private getContainerForActor(a: Actor) : PIXI.Container {
         let container: PIXI.Container = null;
         if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)
@@ -124,12 +138,6 @@ class GameRenderer {
         else
             alert('addActorToWorld: could not find a container for actor type: ' + a.actorType);
         return container;
-    }
-
-    private updateSpriteRenderPosition(actorAnim: ActorAnimation) : void { // TODO: Will need refactor with camera/animation changes.
-        let p = this.getSpriteRenderPosition(actorAnim.actor);
-        actorAnim.animation.sprite.x = p.x;
-        actorAnim.animation.sprite.y = p.y;
     }
 
     private getSpriteRenderPosition(a: Actor) : Point {

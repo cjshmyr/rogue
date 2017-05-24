@@ -3,10 +3,7 @@ class Actor {
     id: number = 0;
     isInWorld: boolean = false;
     rendered: boolean = false;
-    state: string;
-    getActorState() : string {
-        return this.name + '-' + this.state;
-    }
+    state: string = 'idle';
 
     readonly name: string = 'undefined actor';
     position: Point;
@@ -19,7 +16,6 @@ class Actor {
     inventory: Inventory;
 
     // Rendering (TODO: rename me LOL)
-    sprite: PIXI.Sprite;
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
     inRenderBounds: boolean = false; // Is in camera bounds
 

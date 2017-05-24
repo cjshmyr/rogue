@@ -1,7 +1,7 @@
 class GameTextures {
     static atlas: PIXI.loaders.TextureDictionary;
 
-    static Init() {
+    static initialize() {
         this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
     }
 

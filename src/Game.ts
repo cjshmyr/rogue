@@ -5,23 +5,15 @@ window.onload = () => {
 class Game {
     renderer: GameRenderer;
     world: World;
-    hud: Hud;
+    // hud: Hud;
     // minimap: Minimap;
 
     constructor() {
         this.renderer = new GameRenderer(this);
         this.world = new World(this);
 
-        this.hud = new Hud();
+        // this.hud = new Hud(); // TODO: Split this.
         // this.minimap = new Minimap();
-    }
-
-    actorAddedToWorld(a: Actor) {
-        this.renderer.actorAdded(a);
-    }
-
-    actorRemovedFromWorld(a: Actor) {
-        this.renderer.actorRemoved(a);
     }
 }
 

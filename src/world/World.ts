@@ -38,7 +38,7 @@ class World {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
             // console.log(event.keyCode);
             // console.log(event.key);
-            this.game.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
+            // this.game.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
             if (this.playerTurn) {
                 if (event.keyCode == KeyCode.w) {
@@ -102,7 +102,7 @@ class World {
             this.pfCollisionLayer.addActor(a, a.position.x, a.position.y);
         }
 
-        // Set to being in world
+        // Add to world
         a.isInWorld = true;
     }
 
@@ -151,7 +151,7 @@ class World {
     }
 
     private doHeroWait() : void {
-        this.game.hud.combatLog.push('You waited.');
+        // this.game.hud.combatLog.push('You waited.');
         this.playerTurn = false;
         this.turnEnded();
         this.doNpcActions();
@@ -166,12 +166,12 @@ class World {
         let allowMove: boolean = true;
         if (blocker) {
             if (blocker.actorType == ActorType.Wall) {
-                this.game.hud.combatLog.push('You cannot move there.');
+                // this.game.hud.combatLog.push('You cannot move there.');
             }
             else if (blocker.actorType == ActorType.Chest && !blocker.chestOpen) {
                 let item = blocker.openChest();
                 this.hero.inventory.addItem(item);
-                this.game.hud.combatLog.push('You opened a chest...  found ' + item.name + '!');
+                // this.game.hud.combatLog.push('You opened a chest...  found ' + item.name + '!');
             }
 
             allowMove = false;
@@ -180,10 +180,10 @@ class World {
             if (a.actorType == ActorType.Npc) {
                 // Atack it!
                 a.inflictDamage(this.hero.damage);
-                this.game.hud.combatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
+                // this.game.hud.combatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
 
                 if (a.isDead()) {
-                    this.game.hud.combatLog.push('You killed ' + a.name + '!');
+                    // this.game.hud.combatLog.push('You killed ' + a.name + '!');
                     this.removeActorFromWorld(a);
                 }
 
@@ -195,7 +195,7 @@ class World {
             // Pick it up / give gold
             this.hero.inventory.gold += item.gold;
 
-            this.game.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
+            // this.game.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
             this.removeActorFromWorld(item);
         }
 
@@ -234,10 +234,10 @@ class World {
             if (a.actorType == ActorType.Hero) {
                 // Attack player
                 a.inflictDamage(npc.damage);
-                this.game.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
+                // this.game.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
 
                 if (a.isDead()) {
-                    this.game.hud.combatLog.push(npc.name + ' killed you!');
+                    // this.game.hud.combatLog.push(npc.name + ' killed you!');
                     this.removeActorFromWorld(a);
 
                     // TODO: Hero needs to die.
@@ -255,7 +255,7 @@ class World {
     private turnEnded() : void {
         // this.centerCameraOnHero();
         // this.applyLightSources();
-        this.game.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
+        // this.game.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
         // this.game.minimap.updateMinimap(this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
     }
 
