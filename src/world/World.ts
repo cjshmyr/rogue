@@ -32,12 +32,10 @@ class World {
 
     private tick = () => {
         this.tickNumber++;
-        // let self = this;
-        // this.game.updateWorldTick(self);
 
-        if (this.tickNumber == 300) {
-            this.addActorToWorld(ActorInitializer.NewMonster(new Point(2,2)));
-        }
+        // if (this.tickNumber == 300) {
+        //     this.addActorToWorld(ActorInitializer.NewMonster(new Point(2,2)));
+        // }
     }
 
     private setupEvents() : void {
@@ -140,7 +138,6 @@ class World {
         a.isInWorld = false;
     }
 
-    // TODO: Define elsewhere. Combine the cell layer / container gets. Potentially have them as properties on actor.
     private getCellLayerForActor(a: Actor) : CellLayer {
         let layer: CellLayer = null;
         if (a.actorType == ActorType.Hero || a.actorType == ActorType.Npc)

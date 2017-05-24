@@ -15,7 +15,7 @@ class Actor {
     // Inventory
     inventory: Inventory;
 
-    // Rendering (TODO: rename me LOL)
+    // Rendering
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
     renderLightSourceTint: LightSourceTint;
     renderVisible: boolean = false;
