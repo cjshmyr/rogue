@@ -1,3 +1,12 @@
+class ActorAnimation {
+    actor: Actor;
+    animation: Animation;
+    constructor(actor: Actor, animation: Animation) {
+        this.actor = actor;
+        this.animation = animation;
+    }
+}
+
 class Animation {
     readonly animationPrefix: string;
 

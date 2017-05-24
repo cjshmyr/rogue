@@ -1,5 +1,13 @@
 // TODO: Want to combine this stuff into various objects later, then do json->object loading
 class Actor {
+    id: number = 0;
+    isInWorld: boolean = false;
+    rendered: boolean = false;
+    state: string;
+    getActorState() : string {
+        return this.name + '-' + this.state;
+    }
+
     readonly name: string = 'undefined actor';
     position: Point;
     actorType: ActorType = ActorType.Undefined; // TODO: Make readonly?
@@ -10,9 +18,8 @@ class Actor {
     // Inventory
     inventory: Inventory;
 
-    // Rendering
-    animation: Animation;
-
+    // Rendering (TODO: rename me LOL)
+    sprite: PIXI.Sprite;
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
     inRenderBounds: boolean = false; // Is in camera bounds
 
@@ -42,7 +49,6 @@ class Actor {
         this.name = name;
         this.position = position;
         this.blocksMovement = blocksMovement;
-        this.animation = new Animation(name);
     }
 
     inflictDamage(amount: number) : void {
@@ -56,25 +62,8 @@ class Actor {
     openChest() : Item {
         this.chestOpen = true;
 
-        this.animation.setState('idle2');
+        // this.animation.setState('idle2');
 
         return this.chestItem;
     }
 }
-
-/*
-idea:
-    have the game subscribe to animations on a Tick basis
-
-    on each tick, loop through each actor with sprite = dirty
-
-    where the sprite = dirty, then update its art
-
-    how do we know which art to use? the actor should have a property with the desired texture.
-
-    getSpriteTexture() : {
-        check what type we are
-
-        if hero, return a suggested hero sprite?
-    }
-*/

@@ -1,3 +1,6 @@
+// TODO: Decouple minimap game logic/rendering
+
+/*
 class Minimap {
     private readonly topLeftStart: Point = new Point(600, 600);
     graphics: PIXI.Graphics;
@@ -59,3 +62,4 @@ class Minimap {
         }
     }
 }
+*/

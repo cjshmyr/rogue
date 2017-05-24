@@ -1,3 +1,5 @@
+// TODO: Decouple hud game logic/rendering
+
 class Hud {
     private readonly combatHudStart: Point = new Point(16, 600);
     private readonly infoHudStart: Point = new Point(600, 16);
