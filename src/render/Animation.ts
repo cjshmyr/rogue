@@ -11,7 +11,7 @@ class Animation {
 
     constructor(animationPrefix: string) {
         this.animationPrefix = animationPrefix;
-        this.sprite = new PIXI.Sprite(GameTextures.getSpriteTexture(this.getAnimationName()));
+        this.sprite = new PIXI.Sprite(TextureAtlas.getSpriteTexture(this.getAnimationName()));
     }
 
     setState(newState: string) { // Thought: are we updating the texture at the proper time?
@@ -21,7 +21,7 @@ class Animation {
 
     Tick(tick: number) : void {
         if (this.currentState != this.lastState) {
-            this.sprite.texture = GameTextures.getSpriteTexture(this.getAnimationName());
+            this.sprite.texture = TextureAtlas.getSpriteTexture(this.getAnimationName());
             this.lastState = this.currentState;
         }
 

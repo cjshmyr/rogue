@@ -1,6 +1,6 @@
 class Minimap {
     private readonly topLeftStart: Point = new Point(600, 600);
-    graphics: PIXI.Graphics;
+    readonly graphics: PIXI.Graphics;
 
     constructor() {
         this.graphics = new PIXI.Graphics();

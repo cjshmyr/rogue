@@ -13,7 +13,7 @@ class Actor {
     // Rendering
     animation: Animation;
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
-    inRenderBounds: boolean = false; // Is in camera bounds
+    inRenderBounds: boolean = false; // Is in camera bounds  (TODO: This is the only property the renderer touches)
 
     // Vision
     hiddenUnderFog: boolean = false; // Is this hidden under fog?
