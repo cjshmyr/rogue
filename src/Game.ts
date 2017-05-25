@@ -16,6 +16,7 @@ class Game {
     // HUD / Minimap
     hud: Hud
     minimap: Minimap;
+    characterUi: CharacterUi;
 
     // Game
     floorLayer: CellLayer;
@@ -30,15 +31,17 @@ class Game {
     constructor() {
         this.renderer = new Renderer();
 
-        // Setup
-        this.setupEvents();
-
         // UI
         this.hud = new Hud();
         this.minimap = new Minimap();
+        this.characterUi = new CharacterUi();
 
         this.renderer.addHud(this.hud);
         this.renderer.addMinimap(this.minimap);
+        this.renderer.addCharacterUi(this.characterUi);
+
+        // Bind key events
+        this.setupEvents();
 
         // Generate & load a test map
         let map = MapGenerator.generateTestMap();
@@ -55,6 +58,10 @@ class Game {
             this.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
             if (this.playerTurn) {
+                if (event.keyCode == KeyCode.i) {
+                    this.characterUi.toggle(this.hero); // TODO: Potential race condition where this is null
+                }
+
                 if (event.keyCode == KeyCode.w) {
                     this.doHeroWait();
                 }

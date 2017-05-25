@@ -8,6 +8,7 @@ class Renderer {
     private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer ]; }
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
+    characterUiContainer: PIXI.Container;
 
     readonly worldSpriteSize: number = 16; // (16x16)
     readonly worldTileDisplayWidth: number = 50; // Matches to canvas size (800)
@@ -27,6 +28,7 @@ class Renderer {
         this.lifeContainer = new PIXI.Container();
         this.minimapContainer = new PIXI.Container();
         this.hudContainer = new PIXI.Container();
+        this.characterUiContainer = new PIXI.Container();
 
         this.stage.addChild(this.floorContainer);
         this.stage.addChild(this.blockContainer);
@@ -34,6 +36,7 @@ class Renderer {
         this.stage.addChild(this.lifeContainer);
         this.stage.addChild(this.minimapContainer);
         this.stage.addChild(this.hudContainer);
+        this.stage.addChild(this.characterUiContainer);
 
         // Start rendering
         this.renderLoop();
@@ -46,6 +49,10 @@ class Renderer {
 
     addMinimap(minimap: Minimap) : void {
         this.minimapContainer.addChild(minimap.graphics);
+    }
+
+    addCharacterUi(characterUi: CharacterUi) : void {
+        this.characterUiContainer.addChild(characterUi.graphics);
     }
 
     addActor(a: Actor) : void {
