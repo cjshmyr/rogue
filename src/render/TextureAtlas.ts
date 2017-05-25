@@ -16,6 +16,8 @@ class TextureAtlas {
         else if (animationName == 'Torch-idle') file = 'sprite247'
         else if (animationName == 'Chest-idle') file = 'sprite244'
         else if (animationName == 'Chest-idle2') file = 'sprite245'
+        else if (animationName == 'Door-idle') file = 'sprite161'
+        else if (animationName == 'Door-idle2') file = 'sprite163'
         else alert('getSpriteTexture: Unknown animation name -> sprite file: ' + animationName);
         return this.atlas[file];
     }

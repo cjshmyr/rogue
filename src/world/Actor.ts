@@ -2,7 +2,7 @@
 class Actor {
     readonly name: string = 'undefined actor';
     position: Point;
-    actorType: ActorType = ActorType.Undefined; // TODO: Make readonly?
+    actorType: ActorType = ActorType.UndefinedActorType; // TODO: Make readonly?
 
     hitpoints: number = 0;
     damage: number = 0;
@@ -37,6 +37,9 @@ class Actor {
     chestItem: Item;
     chestOpen: boolean = false;
 
+    // Doors
+    isDoorOpen: boolean = false;
+
     constructor(name: string, position: Point, blocksMovement: boolean = false) {
         this.name = name;
         this.position = position;
@@ -58,5 +61,15 @@ class Actor {
         this.animation.setState('idle2');
 
         return this.chestItem;
+    }
+
+    openDoor() : void {
+        this.isDoorOpen = true;
+
+        // Remove blocking light/vision properties
+        this.blocksLight = false;
+        this.blocksVision = false;
+
+        this.animation.setState('idle2');
     }
 }

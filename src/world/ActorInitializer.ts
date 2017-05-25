@@ -35,6 +35,16 @@ class ActorInitializer {
         return a;
     }
 
+    static NewDoor(position: Point) : Actor {
+        let a = new Actor('Door', position, true);
+        a.actorType = ActorType.Door;
+
+        a.blocksLight = true;
+        a.blocksVision = true;
+
+        return a;
+    }
+
     static NewTorch(position: Point) : Actor {
         let a = new Actor('Torch', position, true);
         a.actorType = ActorType.Wall;

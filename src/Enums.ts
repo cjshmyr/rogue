@@ -25,11 +25,12 @@ enum LightSourceTint {
 }
 
 enum ActorType {
-    Undefined,
+    UndefinedActorType,
     Hero,
     Npc,
     Floor,
     Wall,
+    Door,
     Item,
     Chest
 }

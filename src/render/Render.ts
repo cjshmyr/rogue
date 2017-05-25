@@ -89,7 +89,7 @@ class Renderer {
             container = this.lifeContainer;
         else if (a.actorType == ActorType.Floor)
             container = this.floorContainer;
-        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
+        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest || a.actorType == ActorType.Door)
             container = this.blockContainer;
         else if (a.actorType == ActorType.Item)
             container = this.itemContainer;

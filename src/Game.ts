@@ -153,7 +153,7 @@ class Game {
             layer = this.lifeLayer;
         else if (a.actorType == ActorType.Floor)
             layer = this.floorLayer;
-        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest)
+        else if (a.actorType == ActorType.Wall || a.actorType == ActorType.Chest || a.actorType == ActorType.Door)
             layer = this.blockLayer;
         else if (a.actorType == ActorType.Item)
             layer = this.itemLayer;
@@ -179,6 +179,17 @@ class Game {
         if (blocker) {
             if (blocker.actorType == ActorType.Wall) {
                 this.hud.combatLog.push('You cannot move there.');
+            }
+            else if (blocker.actorType == ActorType.Door && !blocker.isDoorOpen) {
+                blocker.openDoor();
+
+                // Remove from collision layer
+                this.pfCollisionLayer.removeActor(blocker, blocker.position.x, blocker.position.y);
+
+                // Remove from blocker layer
+                this.blockLayer.removeActor(blocker, blocker.position.x, blocker.position.y);
+
+                this.hud.combatLog.push('You opened the door.');
             }
             else if (blocker.actorType == ActorType.Chest && !blocker.chestOpen) {
                 let item = blocker.openChest();
