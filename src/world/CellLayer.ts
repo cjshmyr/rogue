@@ -19,7 +19,7 @@ class CellLayer {
         this.actorCount = 0;
     }
 
-    public getActors() : Actor[] {
+    getActors() : Actor[] {
         let actors = [];
         for (let y = 0; y < this.cells.length; y++) {
             for (let x = 0; x < this.cells[y].length; x++) {
@@ -31,7 +31,7 @@ class CellLayer {
         return actors;
     }
 
-    public addActor(a: Actor, x: number, y: number) : void {
+    addActor(a: Actor, x: number, y: number) : void {
         if (this.cells[y][x] == null) {
             this.cells[y][x] = a;
             this.actorCount++;
@@ -41,7 +41,7 @@ class CellLayer {
         }
     }
 
-    public removeActor(a: Actor, x: number, y: number) : void {
+    removeActor(a: Actor, x: number, y: number) : void {
         if (this.cells[y][x] != null) {
             this.cells[y][x] = null;
             this.actorCount--;
@@ -51,12 +51,24 @@ class CellLayer {
         }
     }
 
-    public moveActor(a: Actor, newX: number, newY: number) : void { // TODO: Support point as a parameter.
+    moveActor(a: Actor, newX: number, newY: number) : void { // TODO: Support point as a parameter.
         this.removeActor(a, a.position.x, a.position.y);
         this.addActor(a, newX, newY);
     }
 
-    public actorAt(x: number, y: number) : Actor {
+    actorAt(x: number, y: number) : Actor {
         return this.cells[y][x];
+    }
+
+    asPathfinderCellMatrix() : number[][] {
+        // Returns a matrix with 0 as pathable, 1 as unpathable cells.
+        let matrix = [];
+        for (let y = 0; y < this.cells.length; y++) {
+            matrix[y] = [];
+            for (let x = 0; x < this.cells[y].length; x++) {
+                matrix[y][x] = this.cells[y][x] == null ? 0 : 1;
+            }
+        }
+        return matrix;
     }
 }

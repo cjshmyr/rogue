@@ -14,7 +14,7 @@ To build, install typescript 2.3.2+ and compile with `tsc`. To run, open `game.h
 
 [Pathfinding by qiao (v0.4.18)](https://github.com/qiao/PathFinding.js/)
 
-[Pathfinding TypeScript definitions (v0.4.18)](https://github.com/DefinitelyTyped/DefinitelyTyped)
+[Pathfinding TypeScript definitions (v0.4.18)](https://github.com/DefinitelyTyped/DefinitelyTyped) - these have been modified.
 
 ## Art
 Art provided by user [Jerom](https://opengameart.org/content/16x16-fantasy-tileset) on opengameart.org.

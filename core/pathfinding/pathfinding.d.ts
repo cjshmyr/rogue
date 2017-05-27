@@ -5,6 +5,7 @@
 
 // Edited by: cjshmyr <https://github.com/cjshmyr>
 // Edits: Removed `declare module "pathfinding"`, replaced `namespace Pathfinding` with `namespace PF`. Was done with parity with pixi's d.ts style.
+// Edits: Added additional ctor for Grid, needed since `Grid(matrix)` was busted.
 declare namespace PF {
     export namespace Heuristic {
         function manhattan(dx: number, dy: number): number;
@@ -60,6 +61,7 @@ declare namespace PF {
 
     interface Grid {
         new (width: number, height: number): Grid;
+        new (width: number, height: number, matrix: number[][]) : Grid;
         new (matrix: number[][]): Grid;
 
         setWalkableAt(x: number, y: number, walkable: boolean): void;

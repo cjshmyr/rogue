@@ -251,8 +251,15 @@ class Game {
 
     private doNpcAction(npc: Actor) {
         // TODO: Attempt to move towards player
-        // This is insanely stupid.
-        let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
+        // This is slightly less stupid than before.
+        // let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
+        let destination = Pathfinder.findNextNode(this.pfCollisionLayer.asPathfinderCellMatrix(), npc.position, this.hero.position);
+
+        if (destination == null) {
+            // Can't move, ai's blocked!
+            return;
+        }
+
         let blocker = this.blockLayer.actorAt(destination.x, destination.y);
         let a = this.lifeLayer.actorAt(destination.x, destination.y);
 
