@@ -1,7 +1,7 @@
 # rogue
 
 ## About
-Small game experiment with Typescript + Pixi.
+Small game experiment with TypeScript + Pixi.
 
 To build, install typescript 2.3.2+ and compile with `tsc`. To run, open `game.html`.
 
@@ -10,7 +10,7 @@ To build, install typescript 2.3.2+ and compile with `tsc`. To run, open `game.h
 
 [Pixi.js (v4.5.1)](http://www.pixijs.com/)
 
-[Pixi-Typescript bindings (v4.5.0)](https://github.com/pixijs/pixi-typescript/tree/v4.5.0)
+[Pixi-Typescript definitions (v4.5.0)](https://github.com/pixijs/pixi-typescript/tree/v4.5.0)
 
 ## Art
 Art provided by user [Jerom](https://opengameart.org/content/16x16-fantasy-tileset) on opengameart.org.
