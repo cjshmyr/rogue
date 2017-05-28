@@ -17,7 +17,7 @@ class Actor {
 
     // Vision
     hiddenUnderFog: boolean = false; // Is this hidden under fog?
-    // visionRange: number = 0; // How much can this actor see?
+    visionRange: number = 0; // How far can this actor see? (Circle radius)
     lightSourceRange: number = 0; // How much light is given off?
     lightSourceAlwaysVisible: boolean = false // Is this light source always visible? (Even under shroud)
                                             // If false, this may look weird with large torches, since our light FOV may expand drastically upon discovery.

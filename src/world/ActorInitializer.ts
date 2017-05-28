@@ -19,7 +19,7 @@ class ActorInitializer {
 
         a.hitpoints = 5;
         a.damage = 2;
-        // a.visionRange = 5;
+        a.visionRange = 10;
         a.hiddenUnderFog = true;
 
         return a;

@@ -252,7 +252,7 @@ class Game {
     private doNpcAction(npc: Actor) {
         // TODO: Attempt to move towards player
         // This is slightly less stupid than before.
-        // let destination = SimplePathfinder.GetClosestCellBetweenPoints(npc.position, this.hero.position);
+
         let destination = Pathfinder.findNextNode(this.pfCollisionLayer.asPathfinderCellMatrix(), npc.position, this.hero.position);
 
         if (destination == null) {
@@ -260,32 +260,29 @@ class Game {
             return;
         }
 
-        let blocker = this.blockLayer.actorAt(destination.x, destination.y);
-        let a = this.lifeLayer.actorAt(destination.x, destination.y);
+        // Attempt to attack hero within our vision range
+        // TODO: This isn't quite fair yet. We need the actor to have vision similar to the hero.
+        let nearbyActors = this.lifeLayer.actorsInCircle(npc.position, npc.visionRange);
 
-        let allowMove: boolean = true;
-        if (blocker) {
-            allowMove = false;
-        }
-        else if (a) {
+        for (let a of nearbyActors) {
             if (a.actorType == ActorType.Hero) {
-                // Attack player
-                a.inflictDamage(npc.damage);
-                this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
+                if (a.position.Equals(destination)) {
+                    // Attack player
+                    a.inflictDamage(npc.damage);
+                    this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
 
-                if (a.isDead()) {
-                    this.hud.combatLog.push(npc.name + ' killed you!');
-                    this.removeActorFromWorld(a);
+                    if (a.isDead()) {
+                        this.hud.combatLog.push(npc.name + ' killed you!');
+                        this.removeActorFromWorld(a);
 
-                    // TODO: Hero needs to die.
+                        // TODO: Hero needs to die.
+                    }
                 }
-
-                allowMove = false;
+                else {
+                    // Move to player
+                    this.updateActorPosition(npc, destination);
+                }
             }
-        }
-
-        if (allowMove) {
-            this.updateActorPosition(npc, destination);
         }
     }
 

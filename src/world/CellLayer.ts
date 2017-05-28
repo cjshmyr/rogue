@@ -60,6 +60,19 @@ class CellLayer {
         return this.cells[y][x];
     }
 
+    actorsInCircle(center: Point, radius: number) : Actor[] {
+        let actors: Actor[] = [];
+        let circle = Geometry.pointsInCircle(center, radius);
+
+        for (let p of circle) {
+            if (this.cells[p.y] != null && this.cells[p.y][p.x] != null) { // Circles may reach OOB
+                actors.push(this.cells[p.y][p.x]);
+            }
+        }
+
+        return actors;
+    }
+
     asPathfinderCellMatrix() : number[][] {
         // Returns a matrix with 0 as pathable, 1 as unpathable cells.
         let matrix = [];
