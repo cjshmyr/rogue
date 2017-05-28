@@ -45,6 +45,7 @@ class Renderer {
     addHud(hud: Hud) : void {
         this.hudContainer.addChild(hud.combatHud);
         this.hudContainer.addChild(hud.infoHud);
+        this.hudContainer.addChild(hud.debugText);
     }
 
     addMinimap(minimap: Minimap) : void {

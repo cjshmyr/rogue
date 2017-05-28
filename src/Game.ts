@@ -2,9 +2,11 @@ window.onload = () => {
     // Load art, start game
     PIXI.loader
         .add('core/art/sprites.json')
+        .add('core/font/font.json')
         .load(() => {
             // Important we put any static reusable bits here
             TextureAtlas.init();
+            FontAtlas.init();
             let game = new Game();
         });
 }

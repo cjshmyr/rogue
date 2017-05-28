@@ -6,6 +6,8 @@ class Hud {
     combatLog: string[] = [];
     lastKeyPressed: string;
 
+    debugText: PIXI.Graphics;
+
     constructor() {
         this.combatHud = new PIXI.Text('');
         this.combatHud.style.fontSize = 12;
@@ -22,6 +24,9 @@ class Hud {
         this.infoHud.style.strokeThickness = 2;
         this.infoHud.position.x = this.infoHudStart.x;
         this.infoHud.position.y = this.infoHudStart.y;
+
+        let test = Font.getText();
+        this.debugText = test;
     }
 
     updateHudText(
