@@ -7,7 +7,7 @@ class ActorInitializer {
 
         a.hitpoints = 25;
         a.damage = 3;
-        // a.visionRange = 10;
+        a.visionRange = 10;
         a.lightSourceRange = 10;
 
         return a;
@@ -29,7 +29,6 @@ class ActorInitializer {
         let a = new Actor('Wall', position, true);
         a.actorType = ActorType.Wall;
 
-        a.blocksLight = true;
         a.blocksVision = true;
 
         return a;
@@ -39,7 +38,6 @@ class ActorInitializer {
         let a = new Actor('Door', position, true);
         a.actorType = ActorType.Door;
 
-        a.blocksLight = true;
         a.blocksVision = true;
 
         return a;
@@ -49,6 +47,7 @@ class ActorInitializer {
         let a = new Actor('Torch', position, true);
         a.actorType = ActorType.Wall;
 
+        a.visionRange = 3; // TODO: Requiring this is bad.
         a.lightSourceRange = 3;
 
         return a;

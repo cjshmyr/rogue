@@ -252,7 +252,6 @@ class Game {
     private doNpcAction(npc: Actor) {
         // TODO: Attempt to move towards player
         // This is slightly less stupid than before.
-
         let destination = Pathfinder.findNextNode(this.pfCollisionLayer.asPathfinderCellMatrix(), npc.position, this.hero.position);
 
         if (destination == null) {
@@ -261,8 +260,7 @@ class Game {
         }
 
         // Attempt to attack hero within our vision range
-        // TODO: This isn't quite fair yet. We need the actor to have vision similar to the hero.
-        let nearbyActors = this.lifeLayer.actorsInCircle(npc.position, npc.visionRange);
+        let nearbyActors = this.getVisibleActors(npc);
 
         for (let a of nearbyActors) {
             if (a.actorType == ActorType.Hero) {
@@ -279,7 +277,7 @@ class Game {
                     }
                 }
                 else {
-                    // Move to player
+                    // Move to hero, if we can see them.
                     this.updateActorPosition(npc, destination);
                 }
             }
@@ -293,7 +291,7 @@ class Game {
         this.minimap.updateMinimap(this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
     }
 
-    private getAllLayerActors() : Actor[] {
+    private getAllLayerActors() : Actor[] { // TODO: Potentially returns the same actor multiple times.
         let actors: Actor[] = [];
         for (let l of this.worldLayers()) {
             actors = actors.concat(l.getActors());
@@ -301,7 +299,7 @@ class Game {
         return actors;
     }
 
-    private getAllLayerActorsAt(x: number, y: number) : Actor[] {
+    private getAllLayerActorsAt(x: number, y: number) : Actor[] { // TODO: Potentially returns the same actor multiple times.
         let actors: Actor[] = [];
         for (let l of this.worldLayers()) {
             var a = l.actorAt(x, y);
@@ -310,6 +308,38 @@ class Game {
             }
         }
         return actors;
+    }
+
+    private getVisibleActors(a: Actor) : Actor[] {
+        // Returns what can be seen by a specific actor, determined by vision blockers.
+        let visible: Actor[] = [];
+
+        // Using a 3 cell annulus to make close vertical walls visible (test with range 10). May want to scale with a formula instead.
+        for (let annulusPoint of Geometry.pointsInAnnulus(a.position, a.visionRange, 3)) {
+            let line = Geometry.pointsInLine(a.position, annulusPoint);
+
+            let obstructing = false;
+            // Begin from vision source origin
+            for (let linePoint of line) {
+                if (obstructing)
+                    break;
+
+                let actorsAtPoint = this.getAllLayerActorsAt(linePoint.x, linePoint.y);
+
+                for (let ap of actorsAtPoint) {
+                    if (ap.blocksVision) {
+                        obstructing = true;
+                    }
+
+                    // We don't want to block the object itself from being seen, just ones after it.
+                    if (visible.indexOf(ap) == -1) {
+                        visible.push(ap);
+                    }
+                }
+            }
+        }
+
+        return visible;
     }
 
     private applyLightSources() : void {
@@ -339,32 +369,17 @@ class Game {
                 continue;
             }
 
-            for (let annulusPoint of Geometry.pointsInAnnulus(a.position, a.lightSourceRange, 3)) {
-                let line = Geometry.pointsInLine(a.position, annulusPoint);
+            let visible = this.getVisibleActors(a);
 
-                let obstructing = false;
-                // Begin from light source origin
-                for (let linePoint of line) {
+            for (let vis of visible) {
+                let distance = Point.Distance(a.position, vis.position);
+                let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
 
-                    if (obstructing)
-                        break;
-
-                    let distance = Point.Distance(a.position, linePoint);
-                    let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
-
-                    for (let a2 of this.getAllLayerActorsAt(linePoint.x, linePoint.y)) {
-                        if (a2.blocksLight) {
-                            obstructing = true;
-                        }
-
-                        // We don't want to block the object itself from being lit, just ones after it.
-                        if (a2.animation.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
-                            a2.animation.sprite.tint = intensity;
-                        }
-                        a2.animation.sprite.visible = true;
-                        a2.revealed = true;
-                    }
+                if (vis.animation.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
+                    vis.animation.sprite.tint = intensity;
                 }
+                vis.animation.sprite.visible = true;
+                vis.revealed = true;
             }
         }
     }

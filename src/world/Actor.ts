@@ -18,14 +18,13 @@ class Actor {
     // Vision
     hiddenUnderFog: boolean = false; // Is this hidden under fog?
     visionRange: number = 0; // How far can this actor see? (Circle radius)
-    lightSourceRange: number = 0; // How much light is given off?
+    lightSourceRange: number = 0; // How much light is given off? (Intensity purpose)
     lightSourceAlwaysVisible: boolean = false // Is this light source always visible? (Even under shroud)
                                             // If false, this may look weird with large torches, since our light FOV may expand drastically upon discovery.
                                             // May have applications in rooms we wish to reveal everything.
                                             // May want to reveal the light source instead when vision radius overlaps, not when we can see it.
                                             // May want to reveal the light source instead when we have line of sight vision of its light, or itself.
-    blocksVision: boolean = false; // Does it block vision?
-    blocksLight: boolean = false; // Does it block light sources?
+    blocksVision: boolean = false; // Does it block vision & light sources?
 
     // Collision
     readonly blocksMovement: boolean = false; // Does it block movement? <-- NOTE: Cannot be changed (yet), because the layer wouldn't understand it.
@@ -67,7 +66,7 @@ class Actor {
         this.isDoorOpen = true;
 
         // Remove blocking light/vision properties
-        this.blocksLight = false;
+        this.blocksVision = false;
         this.blocksVision = false;
 
         this.animation.setState('idle2');

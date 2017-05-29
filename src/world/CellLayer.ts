@@ -57,7 +57,7 @@ class CellLayer {
     }
 
     actorAt(x: number, y: number) : Actor {
-        return this.cells[y][x];
+        return this.cells[y] != null && this.cells[y][x] != null ? this.cells[y][x] : null; // TODO: We need to start excluding OOB.
     }
 
     actorsInCircle(center: Point, radius: number) : Actor[] {
