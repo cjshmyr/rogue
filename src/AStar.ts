@@ -114,34 +114,17 @@ class AStar {
         // TODO: Return failure
     }
 
-    // TODO: This doesn't sort our path the way we want it, nor does it include start/end yet.
+    // TODO: This needs reversal
     reconstructPath(nodes: ANode[][], current: ANode) : ANode[] {
         let path = [];
+        path.push(current);
 
-        while (true) {
-            let parent = this.gerParent(current, nodes);
-
-            if (parent == null) {
-                break;
-            }
-            else {
-                path.push(parent);
-                current = parent;
-            }
+        while (current.parent != null) {
+            path.push(current.parent);
+            current = current.parent;
         }
 
         return path;
-    }
-
-    gerParent(child: ANode, nodes: ANode[][]) : ANode {
-        for (let y = 0; y < nodes.length; y++) {
-            for (let x = 0; x < nodes[y].length; x++) {
-                if (nodes[y][x] == child.parent) {
-                    return child.parent;
-                }
-            }
-        }
-        return null;
     }
 
     popLowestScoreNode(open: ANode[]) : ANode {
