@@ -29,6 +29,8 @@ class Game {
     playerTurn: boolean = true;
 
     constructor() {
+        let astar = new AStar();
+
         this.renderer = new Renderer();
 
         // UI
