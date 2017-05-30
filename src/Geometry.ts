@@ -17,7 +17,7 @@ class Geometry
         let points: Point[] = [];
 
         for (let p of pointsInBox) {
-            if (Point.DistanceSquared(center, p) <= range * range) {
+            if (Point.distanceSquared(center, p) <= range * range) {
                 points.push(p);
             }
         }
@@ -36,7 +36,7 @@ class Geometry
             let isInInnerCircle = false;
 
             for (let q of pointsInInnerCircle) {
-                if (p.Equals(q)) {
+                if (p.equals(q)) {
                     isInInnerCircle = true;
                     break;
                 }
@@ -66,7 +66,7 @@ class Geometry
         while (true) {
             points.push(new Point(p1.x, p1.y));  // Do what you need to for this
 
-            if (p1.Equals(p2)) break;
+            if (p1.equals(p2)) break;
             let e2 = 2 * err;
             if (e2 > -dy) { err -= dy; p1.x += sx; }
             if (e2 < dx) { err += dx; p1.y += sy; }

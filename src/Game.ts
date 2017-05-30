@@ -161,7 +161,7 @@ class Game {
     }
 
     private doHeroMovement(movement: Point) : void {
-        let destination = Point.Add(this.hero.position, movement);
+        let destination = Point.add(this.hero.position, movement);
         let blocker = this.blockLayer.actorAt(destination.x, destination.y);
         let a = this.lifeLayer.actorAt(destination.x, destination.y);
         let item = this.itemLayer.actorAt(destination.x, destination.y);
@@ -246,7 +246,7 @@ class Game {
 
         for (let a of nearbyActors) {
             if (a.actorType == ActorType.Hero) {
-                if (a.position.Equals(destination)) {
+                if (a.position.equals(destination)) {
                     // Attack player
                     a.inflictDamage(npc.damage);
                     this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
@@ -354,7 +354,7 @@ class Game {
             let visible = this.getVisibleActors(a);
 
             for (let vis of visible) {
-                let distance = Point.Distance(a.position, vis.position);
+                let distance = Point.distance(a.position, vis.position);
                 let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
 
                 if (vis.animation.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")

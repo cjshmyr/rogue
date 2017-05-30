@@ -1,15 +1,15 @@
 // A really stupid pathfinder. Eventually replace with A*.
 class SimplePathfinder {
     static GetClosestCellBetweenPoints(start: Point, end: Point) : Point {
-        let up = Point.Add(start, new Point(0,1));
-        let down = Point.Add(start, new Point(0, -1));
-        let left = Point.Add(start, new Point(-1, 0));
-        let right = Point.Add(start, new Point(1, 0));
+        let up = Point.add(start, new Point(0,1));
+        let down = Point.add(start, new Point(0, -1));
+        let left = Point.add(start, new Point(-1, 0));
+        let right = Point.add(start, new Point(1, 0));
 
-        let upDistance = Point.DistanceSquared(up, end);
-        let downDistance = Point.DistanceSquared(down, end);
-        let leftDistance = Point.DistanceSquared(left, end);
-        let rightDistance = Point.DistanceSquared(right, end);
+        let upDistance = Point.distanceSquared(up, end);
+        let downDistance = Point.distanceSquared(down, end);
+        let leftDistance = Point.distanceSquared(left, end);
+        let rightDistance = Point.distanceSquared(right, end);
 
         let distances = [upDistance, downDistance, leftDistance, rightDistance];
         let sorted = distances.sort((a,b) => { return a - b });
