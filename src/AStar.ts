@@ -1,9 +1,3 @@
-// TODO: Potentially remove pfCollisionLayer -- stare at everthing but floor instead, combine results
-// TODO: We need to combine arrays, but not duplicate items. Might not be an issue if nothing lives on
-// multiple layers -- e.g. Life is always Life, Block is always BLock, and we just check properties.
-// Should be OK. If we kill pfCollisionLayer, we can have dynamic movement blocking without
-// membership!
-
 class ANode {
     position: Point;
     parent: ANode;
@@ -17,7 +11,6 @@ class ANode {
     }
 }
 
-// http://www.growingwiththeweb.com/2012/06/a-pathfinding-algorithm.html
 class AStar {
     constructor() {
         let map = [ [0,1,1,1,1], // Sample map
@@ -97,18 +90,13 @@ class AStar {
                     continue; // but wasn't a better path
                 }
 
-                // Best path until now
+                // Best path at this time
                 console.log('-- BEST');
-                if (next.position.x == 2 && next.position.y == 2) {
-                    let debug = true;
-                }
 
                 next.g = tentativeG;
                 next.f = next.g + this.heuristicManhattan(next.position, goal);
                 next.parent = node;
             }
-
-            // closed.push(node);
         }
 
         // TODO: Return failure
