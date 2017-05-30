@@ -1,4 +1,30 @@
 class Pathfinder {
+    static getMatrixForCellLayers(cellLayers: CellLayer[]) : number[][] { // TODO: Move this function elsewhere
+        // All layers should have same w/h
+        let width = cellLayers[0].width;
+        let height = cellLayers[0].height;
+
+        // Set all nodes as open (0)
+        let matrix = [];
+        for (let y = 0; y < height; y++) {
+            matrix[y] = [];
+            for (let x = 0; x < width; x++) {
+                matrix[y][x] = 0;
+            }
+        }
+
+        // Set blocked where appropriate (1)
+        for (let c of cellLayers) {
+            for (let a of c.getActors()) {
+                if (a.blocksMovement) {
+                    matrix[a.position.y][a.position.x] = 1;
+                }
+            }
+        }
+
+        return matrix;
+    }
+
     static findPath(matrix: number[][], startPosition: Point, endPosition: Point) : Point[] {
         let width = matrix[0].length; // assume x/y size is correct when matrix was built.
         let height = matrix.length;

@@ -27,7 +27,6 @@ class Hud {
     updateHudText(
         hero: Actor,
         playerTurn: boolean,
-        pfCollisionLayer: CellLayer,
         floorLayer: CellLayer,
         blockLayer: CellLayer,
         lifeLayer: CellLayer,
@@ -52,10 +51,9 @@ class Hud {
             + '\nHero position (x,y): ' + hero.position.x + ',' + hero.position.y
             + '\nTurn: ' + (playerTurn ? 'player' : 'ai')
             + '\n\n-- layers --'
-            + '\nCollision: ' + pfCollisionLayer.actorCount + '/' + pfCollisionLayer.count
-            + '\nFloor: ' + floorLayer.actorCount + '/' + floorLayer.count
-            + '\nBlock: ' + blockLayer.actorCount + '/' + blockLayer.count
-            + '\nLife: ' + lifeLayer.actorCount + '/' + lifeLayer.count
-            + '\nItem: ' + itemLayer.actorCount + '/' + itemLayer.count
+            + '\nFloor: ' + floorLayer.actorCount + '/' + floorLayer.cellCount
+            + '\nBlock: ' + blockLayer.actorCount + '/' + blockLayer.cellCount
+            + '\nLife: ' + lifeLayer.actorCount + '/' + lifeLayer.cellCount
+            + '\nItem: ' + itemLayer.actorCount + '/' + itemLayer.cellCount
     }
 }

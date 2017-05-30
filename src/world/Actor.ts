@@ -27,7 +27,7 @@ class Actor {
     blocksVision: boolean = false; // Does it block vision & light sources?
 
     // Collision
-    readonly blocksMovement: boolean = false; // Does it block movement? <-- NOTE: Cannot be changed (yet), because the layer wouldn't understand it.
+    blocksMovement: boolean = false; // Does it block movement
 
     // Gold piles
     gold: number = 0;

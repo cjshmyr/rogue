@@ -1,21 +1,26 @@
 class CellLayer {
     private cells: Actor[][];
-    count: number;
+    cellCount: number;
     actorCount: number;
+    readonly width: number;
+    readonly height: number;
 
-    constructor(maxX: number, maxY: number) {
+    constructor(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+
         this.cells = [];
         let count = 0;
 
-        for (let y = 0; y < maxY; y++) {
+        for (let y = 0; y < height; y++) {
             this.cells[y] = [];
-            for (let x = 0; x < maxX; x++) {
+            for (let x = 0; x < width; x++) {
                 this.cells[y][x] = null;
                 count++;
             }
         }
 
-        this.count = count;
+        this.cellCount = count;
         this.actorCount = 0;
     }
 
@@ -71,17 +76,5 @@ class CellLayer {
         }
 
         return actors;
-    }
-
-    asPathfinderCellMatrix() : number[][] {
-        // Returns a matrix with 0 as pathable, 1 as unpathable cells.
-        let matrix = [];
-        for (let y = 0; y < this.cells.length; y++) {
-            matrix[y] = [];
-            for (let x = 0; x < this.cells[y].length; x++) {
-                matrix[y][x] = this.cells[y][x] == null ? 0 : 1;
-            }
-        }
-        return matrix;
     }
 }

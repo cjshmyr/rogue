@@ -23,8 +23,8 @@ class Game {
     blockLayer: CellLayer;
     itemLayer: CellLayer;
     lifeLayer: CellLayer;
+    private pathfindLayers() : CellLayer[] { return [ this.blockLayer, this.lifeLayer ] }; // For now, assume floor/items never block
     private worldLayers() : CellLayer[] { return [ this.floorLayer, this.blockLayer, this.itemLayer, this.lifeLayer ] }
-    pfCollisionLayer: CellLayer; // For pathfinding only
     hero: Actor;
     playerTurn: boolean = true;
 
@@ -91,7 +91,6 @@ class Game {
 
     private loadMap(map: Map) : void {
         // Setup layers
-        this.pfCollisionLayer = new CellLayer(map.width, map.height);
         this.itemLayer = new CellLayer(map.width, map.height);
         this.floorLayer = new CellLayer(map.width, map.height);
         this.blockLayer = new CellLayer(map.width, map.height);
@@ -114,11 +113,6 @@ class Game {
         let layer = this.getCellLayerForActor(a);
         layer.addActor(a, a.position.x, a.position.y);
 
-        // Add to collision layer if appropriate
-        if (a.blocksMovement) {
-            this.pfCollisionLayer.addActor(a, a.position.x, a.position.y);
-        }
-
         // Render (add)
         this.renderer.addActor(a);
     }
@@ -127,11 +121,6 @@ class Game {
         // Update the actor map position
         let layer = this.getCellLayerForActor(a);
         layer.moveActor(a, newPosition.x, newPosition.y);
-
-        // Update position in collision layer if appropriate
-        if (a.blocksMovement) {
-            this.pfCollisionLayer.moveActor(a, newPosition.x, newPosition.y);
-        }
 
         // Update the hero's position
         a.position = newPosition;
@@ -144,11 +133,6 @@ class Game {
         // Remove from actor layer
         let layer = this.getCellLayerForActor(a);
         layer.removeActor(a, a.position.x, a.position.y);
-
-        // Remove from collision layer if appropriate
-        if (a.blocksMovement) {
-            this.pfCollisionLayer.removeActor(a, a.position.x, a.position.y);
-        }
 
         // Render (remove)
         this.renderer.removeActor(a);
@@ -189,9 +173,6 @@ class Game {
             }
             else if (blocker.actorType == ActorType.Door && !blocker.isDoorOpen) {
                 blocker.openDoor();
-
-                // Remove from collision layer
-                this.pfCollisionLayer.removeActor(blocker, blocker.position.x, blocker.position.y);
 
                 // Remove from blocker layer
                 this.blockLayer.removeActor(blocker, blocker.position.x, blocker.position.y);
@@ -252,7 +233,8 @@ class Game {
     private doNpcAction(npc: Actor) {
         // TODO: Attempt to move towards player
         // This is slightly less stupid than before.
-        let destination = Pathfinder.findNextNode(this.pfCollisionLayer.asPathfinderCellMatrix(), npc.position, this.hero.position);
+        let matrix = Pathfinder.getMatrixForCellLayers(this.pathfindLayers());
+        let destination = Pathfinder.findNextNode(matrix, npc.position, this.hero.position);
 
         if (destination == null) {
             // Can't move, ai's blocked!
@@ -287,7 +269,7 @@ class Game {
     private turnEnded() : void {
         this.renderer.centerViewportOnHero(this.hero, this.getAllLayerActors());
         this.applyLightSources();
-        this.hud.updateHudText(this.hero, this.playerTurn, this.pfCollisionLayer, this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
+        this.hud.updateHudText(this.hero, this.playerTurn, this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
         this.minimap.updateMinimap(this.floorLayer, this.blockLayer, this.lifeLayer, this.itemLayer);
     }
 
@@ -310,7 +292,7 @@ class Game {
         return actors;
     }
 
-    private getVisibleActors(a: Actor) : Actor[] {
+    private getVisibleActors(a: Actor) : Actor[] { // Perf: Skip already seeked cells. Also certain layers don't matter (floor).
         // Returns what can be seen by a specific actor, determined by vision blockers.
         let visible: Actor[] = [];
 
