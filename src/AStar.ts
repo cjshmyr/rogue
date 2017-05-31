@@ -17,13 +17,23 @@ class AStar {
                     [0,0,1,1,1],
                     [1,0,0,0,1],
                     [1,0,1,0,1],
-                    [1,0,1,0,1] ];
+                    [1,0,1,0,1],
+                    [1,0,1,0,1],
+                    [1,0,1,0,1],
+                    [1,0,0,0,1],
+                    [1,0,0,0,1],
+                    [1,0,0,1,1],
+                    [1,0,1,0,0],
+                    [1,0,0,0,0],
+                    [1,1,1,1,1] ];
+
+        console.log('start:' + new Date().getTime());
 
         let width = map[0].length;
         let height = map.length;
 
         let start = new Point(0, 0);
-        let goal = new Point(3, 4);
+        let goal = new Point(3, 10);
 
         let nodes: ANode[][] = [];
         for (let y = 0; y < map.length; y++) {
@@ -50,7 +60,10 @@ class AStar {
             if (node.position.equals(goal)) {
                 // done; break
                 console.log('path made');
-                this.reconstructPath(nodes, node);
+                let path = this.reconstructPath(nodes, node);
+                this.debugPrintSolvedMap(map, path);
+
+                console.log('end:' + new Date().getTime());
                 break;
             }
 
@@ -163,11 +176,26 @@ class AStar {
         return D * (dx + dy);
     }
 
-    debugPrintMap(map: number[][]) {
+    debugPrintSolvedMap(map: number[][], path: ANode[]) {
+        let solved = [];
 
-    }
+        for (let y = 0; y < map.length; y++) {
+            solved[y] = [];
+            for (let x = 0; x < map[y].length; x++) {
+                solved[y][x] = map[y][x] == 0 ? ' ' : '#';
+            }
+        }
 
-    debugPrintMapWithNodes(map: number[][], nodes: ANode[]) {
+        for (let p of path) {
+            solved[p.position.y][p.position.x] = 'o';
+        }
 
+        for (let y = 0; y < solved.length; y++) {
+            let line = '';
+            for (let x = 0; x <solved[y].length; x++) {
+                line += solved[y][x];
+            }
+            console.log(line + '\n');
+        }
     }
 }
