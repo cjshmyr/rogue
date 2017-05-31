@@ -77,4 +77,36 @@ class CellLayer {
 
         return actors;
     }
+
+    // Returns a 2d array of 0s and 1s, of what is pathable/unpathable.
+    // Start and End are always considered pathable.
+    static getPathfindMatrixForCellLayers(cellLayers: CellLayer[], start: Point, end: Point) : number[][] {
+        // All layers should have same w/h
+        let width = cellLayers[0].width;
+        let height = cellLayers[0].height;
+
+        // Set all nodes as open (0)
+        let matrix = [];
+        for (let y = 0; y < height; y++) {
+            matrix[y] = [];
+            for (let x = 0; x < width; x++) {
+                matrix[y][x] = 0;
+            }
+        }
+
+        // Set blocked where appropriate (1)...
+        for (let c of cellLayers) {
+            for (let a of c.getActors()) {
+                if (a.blocksMovement) {
+                    matrix[a.position.y][a.position.x] = 1;
+                }
+            }
+        }
+
+        // But *exclude* start and end.
+        matrix[start.y][start.x] = 0;
+        matrix[end.y][end.x] = 0;
+
+        return matrix;
+    }
 }

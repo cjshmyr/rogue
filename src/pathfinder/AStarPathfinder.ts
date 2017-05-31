@@ -10,39 +10,26 @@ class ANode {
 }
 
 /*
+Doc:
+    - Pass in a 2d array of coordinates, example:
+          [ [0,0,0,0,0],
+            [1,1,0,0,0],
+            [0,0,0,0,1],
+            [0,0,1,0,1],
+            [0,0,0,0,0] ]
+    - Provide the start and end, and the path will be returned.
+
 Optimizations:
     - Methods to set individual cells walkable/unwalkable, rather than constantly rebuild the map.
+
+Potential TODOs:
+    - Untie from core Point(), as it is the only dependency on the rest of the engine.
+    - Clean up console.log comments.
 */
-class AStar {
-    static getMatrixForCellLayers(cellLayers: CellLayer[]) : number[][] { // TODO: Move this function elsewhere
-        // All layers should have same w/h
-        let width = cellLayers[0].width;
-        let height = cellLayers[0].height;
-
-        // Set all nodes as open (0)
-        let matrix = [];
-        for (let y = 0; y < height; y++) {
-            matrix[y] = [];
-            for (let x = 0; x < width; x++) {
-                matrix[y][x] = 0;
-            }
-        }
-
-        // Set blocked where appropriate (1)
-        for (let c of cellLayers) {
-            for (let a of c.getActors()) {
-                if (a.blocksMovement) {
-                    matrix[a.position.y][a.position.x] = 1;
-                }
-            }
-        }
-
-        return matrix;
-    }
-
+class AStarPathfinder {
     static findNextNode(matrix: number[][], start: Point, end: Point) : Point {
         let path = this.findPath(matrix, start, end);
-        return path.length == 1 ? path[0] : path[1]; // Shouldn't happen, but just in case.
+        return path.length == 1 ? path[0] : path[1];
     }
 
     static findPath(map: number[][], start: Point, end: Point) : Point[] {
@@ -52,17 +39,14 @@ class AStar {
         let open: ANode[] = [];
         let closed: ANode[] = [];
 
-        let nodes: ANode[][] = [];  // array of all nodes, pre-setting occupied spaces as being closed.
+        let nodes: ANode[][] = [];  // array of all nodes, pre-setting unpathable xy as being closed.
         for (let y = 0; y < map.length; y++) {
             nodes[y] = [];
             for (let x = 0; x < map[y].length; x++) {
                 nodes[y][x] = new ANode(x, y);
 
                 let isOpen = map[y][x] == 0;
-                let isStart = start.x == x && start.y == y; // don't close the start or goal however.
-                let isEnd = end.x == x && end.y == y;
-
-                if (!isOpen && !isStart && !isEnd) {
+                if (!isOpen) {
                     closed.push(nodes[y][x]);
                 }
             }
@@ -84,7 +68,7 @@ class AStar {
                 // console.log('end:' + (new Date().getTime() - startTime));
                 let path = this.reconstructPath(nodes, node);
 
-                this.debugPrintSolvedMap(map, path);
+                // this.debugPrintSolvedMap(map, path);
 
                 return path;
             }
@@ -121,7 +105,7 @@ class AStar {
             }
         }
 
-        return []; // Fail, empty.
+        return []; // fail, empty path.
     }
 
     private static reconstructPath(nodes: ANode[][], current: ANode) : Point[] {
@@ -133,7 +117,7 @@ class AStar {
             current = current.parent;
         }
 
-        return path.reverse(); // We worked backwards, so reverse it
+        return path.reverse(); // we worked backwards, so reverse it
     }
 
     private static popLowestScoreNode(open: ANode[]) : ANode {
@@ -172,11 +156,11 @@ class AStar {
         return neighbours;
     }
 
-    private static heuristicManhattan(node: Point, goal: Point) : number { // Good for 4 directions
-        let D = 1;
+    private static heuristicManhattan(node: Point, goal: Point) : number { // 4-direction heuristic
+        let d = 1; // may want to tweak this depending on path prettiness
         let dx = Math.abs(node.x - goal.x);
         let dy = Math.abs(node.y - goal.y);
-        return D * (dx + dy);
+        return d * (dx + dy);
     }
 
     private static debugPrintSolvedMap(map: number[][], path: Point[]) {

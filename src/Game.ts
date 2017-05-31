@@ -29,7 +29,7 @@ class Game {
     playerTurn: boolean = true;
 
     constructor() {
-        let astar = new AStar();
+        let astar = new AStarPathfinder();
 
         this.renderer = new Renderer();
 
@@ -235,8 +235,8 @@ class Game {
     private doNpcAction(npc: Actor) {
         // TODO: Attempt to move towards player
         // This is slightly less stupid than before.
-        let matrix = AStar.getMatrixForCellLayers(this.pathfindLayers());
-        let destination = AStar.findNextNode(matrix, npc.position, this.hero.position);
+        let matrix = CellLayer.getPathfindMatrixForCellLayers(this.pathfindLayers(), npc.position, this.hero.position);
+        let destination = AStarPathfinder.findNextNode(matrix, npc.position, this.hero.position);
 
         if (destination == null) {
             // Can't move, ai's blocked!
