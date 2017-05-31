@@ -3,9 +3,9 @@
 ## About
 Small game experiment with TypeScript + Pixi.
 
-To build, install typescript 2.3.2+ and compile with `tsc`. To run, open `game.html`.
+To build, install TypeScript 2.3.2+ and compile with `tsc`. To run, open `game.html`.
 
-If running locally, depending the browser (such as Chrome) you may need to host the page with a web server due to CORS restrictions.
+If ran locally, depending on the browser's CORS restrictions (e.g. Chrome) you may need to host the page with a web server.
 
 ## 3rd party
 3rd party libraries are currently committed to repository -- this may move to use npm. This includes:
