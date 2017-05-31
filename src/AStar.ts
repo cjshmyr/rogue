@@ -3,11 +3,9 @@ class ANode {
     parent: ANode;
     f: number = 0; // heuristic cost estimate (g+h)
     g: number = 0; // cost (g)
-    readonly isWalkable: boolean;
 
-    constructor(x: number, y: number, isWalkable: boolean) {
+    constructor(x: number, y: number) {
         this.position = new Point(x, y);
-        this.isWalkable = isWalkable;
     }
 }
 
@@ -27,43 +25,49 @@ class AStar {
                     [1,0,0,0,0],
                     [1,1,1,1,1] ];
 
-        console.log('start:' + new Date().getTime());
-
         let width = map[0].length;
         let height = map.length;
 
         let start = new Point(0, 0);
         let goal = new Point(3, 10);
 
+        let open: ANode[] = [];
+        let closed: ANode[] = [];
+
         let nodes: ANode[][] = [];
         for (let y = 0; y < map.length; y++) {
             nodes[y] = [];
             for (let x = 0; x < map[y].length; x++) {
-                nodes[y][x] = new ANode(x, y, map[y][x] == 0);
+                nodes[y][x] = new ANode(x, y);
+
+                let isOpen = map[y][x] == 0;
+                if (!isOpen) {
+                    closed.push(nodes[y][x]);
+                }
             }
         }
 
-        let open: ANode[] = [];
-        let closed: ANode[] = [];
-
-        let origin = new ANode(start.x, start.y, true);
+        let origin = new ANode(start.x, start.y);
         origin.g = 0;
         origin.f = origin.g + this.heuristicManhattan(start, goal); // http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html#S7;
         open.push(origin);
 
+        // let startTime = new Date().getTime();
+
         while (open.length != 0) {
-            console.log('open count:' + open.length);
+            // console.log('open count:' + open.length);
             let node = this.popLowestScoreNode(open);
 
-            console.log('lowest score node:' + node.position.x + ',' + node.position.y);
+            // console.log('lowest score node:' + node.position.x + ',' + node.position.y);
 
             if (node.position.equals(goal)) {
                 // done; break
-                console.log('path made');
-                let path = this.reconstructPath(nodes, node);
-                this.debugPrintSolvedMap(map, path);
+                // console.log('path made');
+                // console.log('end:' + (new Date().getTime() - startTime));
 
-                console.log('end:' + new Date().getTime());
+                let path = this.reconstructPath(nodes, node);
+                // this.debugPrintSolvedMap(map, path);
+
                 break;
             }
 
@@ -74,37 +78,26 @@ class AStar {
             for (let p of adjacentPoints) {
                 let next: ANode = nodes[p.y][p.x];
 
-                console.log('- neighbour:' + p.x + ',' + p.y);
-
-                /* this part below by me */
-                if (!next.isWalkable) { // Isn't walkable (TODO: combine with closed check. potentially we can just deal with one array, with undefined/open/closed states)
-                    // closed.push(node);
-                    console.log('-- not walkable; done');
-                    continue;
-                }
-                /* this part above by me */
+                // console.log('- neighbour:' + p.x + ',' + p.y);
 
                 if (closed.indexOf(next) > -1) { // Is closed
-                    console.log('-- is closed; done');
+                    // console.log('-- is closed; done');
                     continue;
                 }
 
                 let tentativeG = node.g + Point.distance(node.position, next.position);
 
                 if (open.indexOf(next) == -1) { // Add if not in open set
-                    if (next.position.x == 1 && next.position.y == 4) {
-                        let anotherdebug = true;
-                    }
-                    console.log('-- not open; adding to open')
+                    // console.log('-- not open; adding to open')
                     open.push(next);
                 }
                 else if (tentativeG >= next.g) { // Already open...
-                    console.log('-- already open, poor score; done');
+                    // console.log('-- already open, poor score; done');
                     continue; // but wasn't a better path
                 }
 
                 // Best path at this time
-                console.log('-- BEST');
+                // console.log('-- BEST');
 
                 next.g = tentativeG;
                 next.f = next.g + this.heuristicManhattan(next.position, goal);
