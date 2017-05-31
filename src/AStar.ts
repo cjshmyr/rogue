@@ -9,39 +9,60 @@ class ANode {
     }
 }
 
+/*
+Optimizations:
+    - Methods to set individual cells walkable/unwalkable, rather than constantly rebuild the map.
+*/
 class AStar {
-    constructor() {
-        let map = [ [0,1,1,1,1], // Sample map
-                    [0,0,1,1,1],
-                    [1,0,0,0,1],
-                    [1,0,1,0,1],
-                    [1,0,1,0,1],
-                    [1,0,1,0,1],
-                    [1,0,1,0,1],
-                    [1,0,0,0,1],
-                    [1,0,0,0,1],
-                    [1,0,0,1,1],
-                    [1,0,1,0,0],
-                    [1,0,0,0,0],
-                    [1,1,1,1,1] ];
+    static getMatrixForCellLayers(cellLayers: CellLayer[]) : number[][] { // TODO: Move this function elsewhere
+        // All layers should have same w/h
+        let width = cellLayers[0].width;
+        let height = cellLayers[0].height;
 
+        // Set all nodes as open (0)
+        let matrix = [];
+        for (let y = 0; y < height; y++) {
+            matrix[y] = [];
+            for (let x = 0; x < width; x++) {
+                matrix[y][x] = 0;
+            }
+        }
+
+        // Set blocked where appropriate (1)
+        for (let c of cellLayers) {
+            for (let a of c.getActors()) {
+                if (a.blocksMovement) {
+                    matrix[a.position.y][a.position.x] = 1;
+                }
+            }
+        }
+
+        return matrix;
+    }
+
+    static findNextNode(matrix: number[][], start: Point, end: Point) : Point {
+        let path = this.findPath(matrix, start, end);
+        return path.length == 1 ? path[0] : path[1]; // Shouldn't happen, but just in case.
+    }
+
+    static findPath(map: number[][], start: Point, end: Point) : Point[] {
         let width = map[0].length;
         let height = map.length;
-
-        let start = new Point(0, 0);
-        let goal = new Point(3, 10);
 
         let open: ANode[] = [];
         let closed: ANode[] = [];
 
-        let nodes: ANode[][] = [];
+        let nodes: ANode[][] = [];  // array of all nodes, pre-setting occupied spaces as being closed.
         for (let y = 0; y < map.length; y++) {
             nodes[y] = [];
             for (let x = 0; x < map[y].length; x++) {
                 nodes[y][x] = new ANode(x, y);
 
                 let isOpen = map[y][x] == 0;
-                if (!isOpen) {
+                let isStart = start.x == x && start.y == y; // don't close the start or goal however.
+                let isEnd = end.x == x && end.y == y;
+
+                if (!isOpen && !isStart && !isEnd) {
                     closed.push(nodes[y][x]);
                 }
             }
@@ -49,26 +70,23 @@ class AStar {
 
         let origin = new ANode(start.x, start.y);
         origin.g = 0;
-        origin.f = origin.g + this.heuristicManhattan(start, goal); // http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html#S7;
+        origin.f = origin.g + this.heuristicManhattan(start, end); // http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html#S7;
         open.push(origin);
 
         // let startTime = new Date().getTime();
-
         while (open.length != 0) {
             // console.log('open count:' + open.length);
             let node = this.popLowestScoreNode(open);
-
             // console.log('lowest score node:' + node.position.x + ',' + node.position.y);
 
-            if (node.position.equals(goal)) {
-                // done; break
-                // console.log('path made');
+            if (node.position.equals(end)) {
+                // done
                 // console.log('end:' + (new Date().getTime() - startTime));
-
                 let path = this.reconstructPath(nodes, node);
-                // this.debugPrintSolvedMap(map, path);
 
-                break;
+                this.debugPrintSolvedMap(map, path);
+
+                return path;
             }
 
             closed.push(node);
@@ -79,7 +97,6 @@ class AStar {
                 let next: ANode = nodes[p.y][p.x];
 
                 // console.log('- neighbour:' + p.x + ',' + p.y);
-
                 if (closed.indexOf(next) > -1) { // Is closed
                     // console.log('-- is closed; done');
                     continue;
@@ -98,30 +115,28 @@ class AStar {
 
                 // Best path at this time
                 // console.log('-- BEST');
-
                 next.g = tentativeG;
-                next.f = next.g + this.heuristicManhattan(next.position, goal);
+                next.f = next.g + this.heuristicManhattan(next.position, end);
                 next.parent = node;
             }
         }
 
-        // TODO: Return failure
+        return []; // Fail, empty.
     }
 
-    // TODO: This needs reversal
-    reconstructPath(nodes: ANode[][], current: ANode) : ANode[] {
-        let path = [];
-        path.push(current);
+    private static reconstructPath(nodes: ANode[][], current: ANode) : Point[] {
+        let path: Point[] = [];
+        path.push(current.position);
 
         while (current.parent != null) {
-            path.push(current.parent);
+            path.push(current.parent.position);
             current = current.parent;
         }
 
-        return path;
+        return path.reverse(); // We worked backwards, so reverse it
     }
 
-    popLowestScoreNode(open: ANode[]) : ANode {
+    private static popLowestScoreNode(open: ANode[]) : ANode {
         let bestIndex = 0;
 
         for (let i = 0; i < open.length; i++) {
@@ -135,7 +150,7 @@ class AStar {
         return bestNode;
     }
 
-    getAdjacent(node: ANode, width: number, height: number) : Point[] {
+    private static getAdjacent(node: ANode, width: number, height: number) : Point[] {
         let neighbours: Point[] = [];
 
         // Assumes u/d/l/r
@@ -149,12 +164,7 @@ class AStar {
             let p = Point.add(node.position, d);
 
             // Point is in bounds
-            let inBounds = false;
             if ((p.x >= 0 && p.x < width) && (p.y >= 0 && p.y < height)) {
-                inBounds = true;
-            }
-
-            if (inBounds) {
                 neighbours.push(p);
             }
         }
@@ -162,14 +172,14 @@ class AStar {
         return neighbours;
     }
 
-    heuristicManhattan(node: Point, goal: Point) : number { // Good for 4 directions
+    private static heuristicManhattan(node: Point, goal: Point) : number { // Good for 4 directions
         let D = 1;
         let dx = Math.abs(node.x - goal.x);
         let dy = Math.abs(node.y - goal.y);
         return D * (dx + dy);
     }
 
-    debugPrintSolvedMap(map: number[][], path: ANode[]) {
+    private static debugPrintSolvedMap(map: number[][], path: Point[]) {
         let solved = [];
 
         for (let y = 0; y < map.length; y++) {
@@ -180,7 +190,7 @@ class AStar {
         }
 
         for (let p of path) {
-            solved[p.position.y][p.position.x] = 'o';
+            solved[p.y][p.x] = 'o';
         }
 
         for (let y = 0; y < solved.length; y++) {
@@ -190,5 +200,23 @@ class AStar {
             }
             console.log(line + '\n');
         }
+    }
+
+    private static debugGetTestMap() : number[][] {
+        let map = [ [0,1,1,1,1], // Sample map
+            [0,0,1,1,1],
+            [1,0,0,0,1],
+            [1,0,1,0,1],
+            [1,0,1,0,1],
+            [1,0,1,0,1],
+            [1,0,1,0,1],
+            [1,0,0,0,1],
+            [1,0,0,0,1],
+            [1,0,0,1,1],
+            [1,0,1,0,0],
+            [1,0,0,0,0],
+            [1,1,1,1,1] ];
+
+        return map;
     }
 }
