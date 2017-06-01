@@ -1,6 +1,6 @@
 // A really stupid pathfinder. Eventually replace with A*.
 class SimplePathfinder {
-    static GetClosestCellBetweenPoints(start: Point, end: Point) : Point {
+    static getClosestCellBetweenPoints(start: Point, end: Point) : Point {
         let up = Point.add(start, new Point(0,1));
         let down = Point.add(start, new Point(0, -1));
         let left = Point.add(start, new Point(-1, 0));
