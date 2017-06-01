@@ -231,23 +231,16 @@ class Game {
     }
 
     private doNpcAction(npc: Actor) {
-        // TODO: Attempt to move towards player
-        // This is slightly less stupid than before.
-        let matrix = CellLayer.getPathfindMatrixForCellLayers(this.pathfindLayers(), npc.position, this.hero.position);
-        let destination = AStarPathfinder.findNextNode(matrix, npc.position, this.hero.position);
-
-        if (destination == null) {
-            // Can't move, ai's blocked!
-            return;
-        }
-
-        // Attempt to attack hero within our vision range
+        // Attempt to move to/attack hero within our vision range
         let nearbyActors = this.getVisibleActors(npc);
 
         for (let a of nearbyActors) {
             if (a.actorType == ActorType.Hero) {
-                if (a.position.equals(destination)) {
-                    // Attack player
+                // move to hero
+                let matrix = CellLayer.getPathfindMatrixForCellLayers(this.pathfindLayers(), npc.position, this.hero.position);
+                let destination = AStarPathfinder.findNextNode(matrix, npc.position, this.hero.position);
+
+                if (a.position.equals(destination)) { // Attack hero
                     a.inflictDamage(npc.damage);
                     this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
 
@@ -258,8 +251,7 @@ class Game {
                         // TODO: Hero needs to die.
                     }
                 }
-                else {
-                    // Move to hero, if we can see them.
+                else { // Move
                     this.updateActorPosition(npc, destination);
                 }
             }
