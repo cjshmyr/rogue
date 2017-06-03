@@ -44,7 +44,7 @@ class Hud {
         this.combatHud.text = log;
 
         this.infoHud.text = 'Health: ' + hero.hitpoints
-            + '\nGold: ' + hero.gold
+            + '\nGold: ' + hero.inventory.gold
             + '\nItems: ' + hero.inventory.items.length
             + '\n\n-- debug --'
             + '\nLast key: ' + this.lastKeyPressed
