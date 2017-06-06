@@ -207,6 +207,11 @@ class Game {
             this.hero.inventory.gold += item.gold;
 
             this.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
+
+            let renderPos = item.renderable.sprite.position;
+            let renderable = new  TextRenderable(item.gold.toString(), new Point(renderPos.x, renderPos.y - 10), 20); // Hacky -- guessed. Also maybe grab offset info from renderer
+            this.renderer.addText(renderable);
+
             this.removeActorFromWorld(item);
         }
 
@@ -326,10 +331,10 @@ class Game {
                 continue;
 
             // Set visible if they're not hidden under fog
-            a.animation.sprite.visible = !a.hiddenUnderFog;
+            a.renderable.sprite.visible = !a.hiddenUnderFog;
 
             // Set appropriate tint (fog, shroud)
-            a.animation.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
+            a.renderable.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
         }
 
         // Dynamic lighting (origin to annulus)
@@ -349,10 +354,10 @@ class Game {
                 let distance = Point.distance(a.position, vis.position);
                 let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
 
-                if (vis.animation.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
-                    vis.animation.sprite.tint = intensity;
+                if (vis.renderable.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
+                    vis.renderable.sprite.tint = intensity;
                 }
-                vis.animation.sprite.visible = true;
+                vis.renderable.sprite.visible = true;
                 vis.revealed = true;
             }
         }

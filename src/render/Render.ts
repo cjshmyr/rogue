@@ -5,7 +5,8 @@ class Renderer {
     blockContainer: PIXI.Container;
     itemContainer: PIXI.Container;
     lifeContainer: PIXI.Container;
-    private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer ]; }
+    effectsContainer: PIXI.Container;
+    private worldContainers() : PIXI.Container[] { return [ this.floorContainer, this.blockContainer, this.itemContainer, this.lifeContainer, this.effectsContainer ]; }
     minimapContainer: PIXI.Container;
     hudContainer: PIXI.Container;
     characterUiContainer: PIXI.Container;
@@ -15,6 +16,7 @@ class Renderer {
     readonly worldTileDisplayHeight: number = 50; // Matches to canvas size (800)
 
     renderActors: Actor[] = [];
+    renderText: TextRenderable[] = [];
 
     renderTick: number = 0;
 
@@ -26,6 +28,7 @@ class Renderer {
         this.blockContainer = new PIXI.Container();
         this.itemContainer = new PIXI.Container();
         this.lifeContainer = new PIXI.Container();
+        this.effectsContainer = new PIXI.Container();
         this.minimapContainer = new PIXI.Container();
         this.hudContainer = new PIXI.Container();
         this.characterUiContainer = new PIXI.Container();
@@ -34,6 +37,7 @@ class Renderer {
         this.stage.addChild(this.blockContainer);
         this.stage.addChild(this.itemContainer);
         this.stage.addChild(this.lifeContainer);
+        this.stage.addChild(this.effectsContainer);
         this.stage.addChild(this.minimapContainer);
         this.stage.addChild(this.hudContainer);
         this.stage.addChild(this.characterUiContainer);
@@ -58,7 +62,7 @@ class Renderer {
     addActor(a: Actor) : void {
         // Add their sprite
         let container = this.getContainerForActor(a);
-        container.addChild(a.animation.sprite);
+        container.addChild(a.renderable.sprite);
 
         // Update the sprite's render position
         this.updateSpriteRenderPosition(a)
@@ -75,7 +79,7 @@ class Renderer {
     removeActor(a: Actor) : void {
         // Remove their sprite
         let container = this.getContainerForActor(a);
-        container.removeChild(a.animation.sprite);
+        container.removeChild(a.renderable.sprite);
 
         // Remove from array for render looping
         let index = this.renderActors.indexOf(a);
@@ -84,10 +88,24 @@ class Renderer {
         }
     }
 
+    addText(renderable: TextRenderable) : void {
+        this.renderText.push(renderable);
+        this.effectsContainer.addChild(renderable.text);
+    }
+
+    removeText(renderable: TextRenderable) : void {
+        let index = this.renderText.indexOf(renderable);
+        if (index > -1) {
+            this.renderText.splice(index, 1);
+        }
+
+        this.effectsContainer.removeChild(renderable.text);
+    }
+
     private updateSpriteRenderPosition(a: Actor) : void { // TODO: Will need refactor with camera/animation changes.
         let p = this.getSpriteRenderPosition(a);
-        a.animation.sprite.x = p.x;
-        a.animation.sprite.y = p.y;
+        a.renderable.sprite.x = p.x;
+        a.renderable.sprite.y = p.y;
     }
 
     private getContainerForActor(a: Actor) : PIXI.Container {
@@ -131,11 +149,11 @@ class Renderer {
 
             if (pos.x >= topLeft && pos.x <= topRight && pos.y >= bottomLeft) {
                 a.inRenderBounds = true;
-                a.animation.sprite.visible = true;
+                a.renderable.sprite.visible = true;
             }
             else {
                 a.inRenderBounds = false;
-                a.animation.sprite.visible = false;
+                a.renderable.sprite.visible = false;
             }
         }
     }
@@ -144,7 +162,15 @@ class Renderer {
         requestAnimationFrame(this.renderLoop);
 
         for (let a of this.renderActors) {
-            a.animation.Tick(this.renderTick);
+            a.renderable.Tick(this.renderTick);
+        }
+
+        for (let t of this.renderText) {
+            t.Tick(this.renderTick);
+
+            if (t.complete) {
+                this.removeText(t);
+            }
         }
 
         this.renderer.render(this.stage);

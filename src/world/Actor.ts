@@ -11,7 +11,7 @@ class Actor {
     inventory: Inventory;
 
     // Rendering
-    animation: Animation;
+    renderable: SpriteRenderable;
     revealed: boolean = false; // Has been revealed/seen/discovered before (not is it shown)?
     inRenderBounds: boolean = false; // Is in camera bounds  (TODO: This is the only property the renderer touches)
 
@@ -43,7 +43,7 @@ class Actor {
         this.name = name;
         this.position = position;
         this.blocksMovement = blocksMovement;
-        this.animation = new Animation(name);
+        this.renderable = new SpriteRenderable(name);
     }
 
     inflictDamage(amount: number) : void {
@@ -57,7 +57,7 @@ class Actor {
     openChest() : Item {
         this.chestOpen = true;
 
-        this.animation.setState('idle2');
+        this.renderable.setState('idle2');
 
         return this.chestItem;
     }
@@ -69,6 +69,6 @@ class Actor {
         this.blocksVision = false;
         this.blocksVision = false;
 
-        this.animation.setState('idle2');
+        this.renderable.setState('idle2');
     }
 }
