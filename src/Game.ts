@@ -191,7 +191,11 @@ class Game {
             if (a.actorType == ActorType.Npc) {
                 // Atack it!
                 a.inflictDamage(this.hero.damage);
+
                 this.hud.combatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
+                let renderPos = a.renderable.sprite.position;
+                let renderable = new TextRenderable('-' + this.hero.damage, HudColor.Red, new Point(renderPos.x + 10, renderPos.y), 20, true);
+                this.renderer.addText(renderable);
 
                 if (a.isDead()) {
                     this.hud.combatLog.push('You killed ' + a.name + '!');
@@ -207,9 +211,8 @@ class Game {
             this.hero.inventory.gold += item.gold;
 
             this.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
-
             let renderPos = item.renderable.sprite.position;
-            let renderable = new  TextRenderable(item.gold.toString(), new Point(renderPos.x, renderPos.y - 10), 20); // Hacky -- guessed. Also maybe grab offset info from renderer
+            let renderable = new TextRenderable('+' + item.gold, HudColor.Orange, new Point(renderPos.x + 10, renderPos.y), 20, true);
             this.renderer.addText(renderable);
 
             this.removeActorFromWorld(item);
@@ -247,7 +250,11 @@ class Game {
 
                 if (a.position.equals(destination)) { // Attack hero
                     a.inflictDamage(npc.damage);
+
                     this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
+                    let renderPos = a.renderable.sprite.position;
+                    let renderable = new TextRenderable('-' + this.hero.damage, HudColor.Red, new Point(renderPos.x + 10, renderPos.y), 20, true);
+                    this.renderer.addText(renderable);
 
                     if (a.isDead()) {
                         this.hud.combatLog.push(npc.name + ' killed you!');
