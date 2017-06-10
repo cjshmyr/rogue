@@ -507,7 +507,7 @@ declare namespace PIXI {
         isMask: boolean;
         boundsPadding: number;
         protected _localBounds: Bounds;
-        dirty: boolean;
+        dirty: number;
         fastRectDirty: number;
         clearDirty: number;
         boundsDirty: number;
@@ -568,7 +568,7 @@ declare namespace PIXI {
         destroy(): void;
         render(graphics: Graphics): void;
         protected updateGraphics(graphics: PIXI.Graphics): void;
-        getWebGLData(webGL: WebGLRenderingContext, type: number): WebGLGraphicsData;
+        getWebGLData(webGL: WebGLRenderingContext, type: number, nativeLines: number): WebGLGraphicsData;
 
     }
     export class WebGLGraphicsData {
@@ -586,6 +586,7 @@ declare namespace PIXI {
         glIndices: number[];
         shader: glCore.GLShader;
         vao: glCore.VertexArrayObject;
+        nativeLines: boolean;
 
         reset(): void;
         upload(): void;
@@ -674,7 +675,9 @@ declare namespace PIXI {
         x: number;
         y: number;
 
-        clone(): Point;
+        //this is weird and clone has been teporarily disabled. See https://github.com/pixijs/pixi-typescript/issues/156
+        //clone(): Point;
+
         copy(p: Point | ObservablePoint): void;
         equals(p: Point): boolean;
         set(x?: number, y?: number): void;
@@ -901,6 +904,8 @@ declare namespace PIXI {
         preserveDrawingBuffer?: boolean;
         roundPixels?: boolean;
         legacy?: boolean;
+        width?: number;
+        height?: number;
 
     }
     export class WebGLRenderer extends SystemRenderer {
@@ -939,6 +944,7 @@ declare namespace PIXI {
         boundTextures: Texture[];
         filterManager: FilterManager;
         textureManager?: TextureManager;
+        textureGC?: TextureGarbageCollector;
         extract: extract.WebGLExtract;
         protected drawModes: any;
         protected _activeShader: Shader;
@@ -1895,7 +1901,7 @@ declare namespace PIXI {
             gotoAndStop(frameNumber: number): void;
             gotoAndPlay(frameNumber: number): void;
             protected update(deltaTime: number): void;
-            destroy(): void;
+            destroy(options?: DestroyOptions | boolean): void;
 
             static fromFrames(frame: string[]): AnimatedSprite;
             static fromImages(images: string[]): AnimatedSprite;
@@ -1942,7 +1948,7 @@ declare namespace PIXI {
             protected _calculateBounds(): void;
             getLocalBounds(rect?: Rectangle): Rectangle;
             containsPoint(point: Point): boolean;
-            destroy(): void;
+            destroy(options?: DestroyOptions | boolean): void;
 
             static from(source: number | string | BaseTexture | HTMLCanvasElement | HTMLVideoElement, width?: number, height?: number): TilingSprite;
             static fromFrame(frameId: string, width?: number, height?: number): TilingSprite;
@@ -2023,6 +2029,7 @@ declare namespace PIXI {
             protected _colorMatrix(matrix: number[]): void;
 
             matrix: number[];
+            alpha: number;
 
             brightness(b: number, multiply?: boolean): void;
             greyscale(scale: number, multiply?: boolean): void;
@@ -2062,7 +2069,10 @@ declare namespace PIXI {
         // https://github.com/pixijs/pixi-filters/
         export class NoiseFilter extends Filter {
 
+            constructor(noise?: number, seed?: number);
+
             noise: number;
+            seed: number;
 
         }
 
@@ -2112,7 +2122,24 @@ declare namespace PIXI {
             global: Point;
             target: DisplayObject;
             originalEvent: MouseEvent | TouchEvent | PointerEvent;
-            identifier?: number;
+            identifier: number;
+            isPrimary: boolean;
+            button: number;
+            buttons: number;
+            width: number;
+            height: number;
+            tiltX: number;
+            tiltY: number;
+            pointerType: string;
+            pressure: number;
+            rotationAngle: number;
+            twist: number;
+            tangentialPressure: number;
+
+            readonly pointerID: number;
+
+            protected _copyEvent(event: Touch | MouseEvent | PointerEvent): void;
+            protected _reset(): void;
 
             getLocalPosition(displayObject: DisplayObject, point?: Point, globalPos?: Point): Point;
 
@@ -2556,6 +2583,7 @@ declare namespace PIXI {
             updateHorizontalVertices(): void;
             updateVerticalVertices(): void;
             protected drawSegment(context: CanvasRenderingContext2D | WebGLRenderingContext, textureSource: any, w: number, h: number, x1: number, y1: number, x2: number, y2: number): void;
+            protected _refresh(): void;
 
         }
 
@@ -2593,6 +2621,9 @@ declare namespace PIXI {
 
             constructor(size?: number, properties?: ParticleContainerProperties, batchSize?: number);
 
+            protected _tint: number;
+            protected _tintRGB: number | any[];
+            tint: number;
             protected _properties: boolean[];
             protected _maxSize: number;
             protected _batchSize: number;
@@ -3198,6 +3229,16 @@ declare namespace PIXI {
         /**
          * @class
          * @private
+         * @name BaseTextureCache
+         * @memberof PIXI
+         * @see PIXI.utils.BaseTextureCache
+         * @deprecated since version 3.0.0
+         */
+        type BaseTextureCache = any;
+
+        /**
+         * @class
+         * @private
          * @name BitmapText
          * @memberof PIXI
          * @see PIXI.extras.BitmapText
@@ -3326,6 +3367,19 @@ declare namespace PIXI {
          * @deprecated since version 4.2.0
          */
         type MovieClip = extras.AnimatedSprite;
+
+    }
+
+    export namespace settings {
+
+        /**
+         * @static
+         * @name PRECISION
+         * @memberof PIXI.settings
+         * @see PIXI.PRECISION
+         * @deprecated since version 4.4.0
+         */
+        type PRECISION = number;
 
     }
 
