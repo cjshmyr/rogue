@@ -39,7 +39,7 @@ class AStarPathfinder {
         let open: ANode[] = [];
         let closed: ANode[] = [];
 
-        let nodes: ANode[][] = [];  // array of all nodes, pre-setting unpathable xy as being closed.
+        let nodes: ANode[][] = [];  // array of all nodes
         for (let y = 0; y < map.length; y++) {
             nodes[y] = [];
             for (let x = 0; x < map[y].length; x++) {
