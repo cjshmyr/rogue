@@ -50,7 +50,7 @@ class ActorInitializer {
         a.actorType = ActorType.Wall;
         a.collision.blocksMovement = true;
 
-        a.vision.visionRange = 3; // TODO: Requiring this is bad.
+        a.vision.visionRange = 3;
         a.vision.lightSourceRange = 3;
 
         return a;

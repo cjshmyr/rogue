@@ -53,8 +53,6 @@ class Game {
 
     private setupEvents() : void {
         window.addEventListener('keydown', (event: KeyboardEvent) => {
-            // console.log(event.keyCode);
-            // console.log(event.key);
             this.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
             event.preventDefault(); // stop browser scrolling
