@@ -97,7 +97,7 @@ class CellLayer {
         // Set blocked where appropriate (1)...
         for (let c of cellLayers) {
             for (let a of c.getActors()) {
-                if (a.blocksMovement) {
+                if (a.collision.blocksMovement) {
                     matrix[a.position.y][a.position.x] = 1;
                 }
             }

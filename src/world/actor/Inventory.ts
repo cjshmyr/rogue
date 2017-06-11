@@ -1,6 +1,5 @@
 class Inventory {
     items: Item[] = [];
-    gold: number = 0;
 
     constructor() {
 

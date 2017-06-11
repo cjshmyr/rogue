@@ -190,11 +190,11 @@ class Game {
         else if (a) {
             if (a.actorType == ActorType.Npc) {
                 // Atack it!
-                a.inflictDamage(this.hero.damage);
+                a.inflictDamage(this.hero.combatant.damage);
 
-                this.hud.combatLog.push('You attacked ' + a.name + ' for ' + this.hero.damage + ' damage.');
+                this.hud.combatLog.push('You attacked ' + a.name + ' for ' + this.hero.combatant.damage + ' damage.');
                 let renderPos = a.renderable.sprite.position;
-                let renderable = new TextRenderable('-' + this.hero.damage, HudColor.Red, new Point(renderPos.x + 10, renderPos.y), 20, true);
+                let renderable = new TextRenderable('-' + this.hero.combatant.damage, HudColor.Red, new Point(renderPos.x + 10, renderPos.y), 20, true);
                 this.renderer.addText(renderable);
 
                 if (a.isDead()) {
@@ -208,11 +208,11 @@ class Game {
         else if (item) {
             // For now, assume it's gold
             // Pick it up / give gold
-            this.hero.inventory.gold += item.gold;
+            this.hero.gold.amount += item.gold.amount;
 
-            this.hud.combatLog.push('You picked up ' + item.gold + ' gold!');
+            this.hud.combatLog.push('You picked up ' + item.gold.amount + ' gold!');
             let renderPos = item.renderable.sprite.position;
-            let renderable = new TextRenderable('+' + item.gold, HudColor.Orange, new Point(renderPos.x + 10, renderPos.y), 20, true);
+            let renderable = new TextRenderable('+' + item.gold.amount, HudColor.Orange, new Point(renderPos.x + 10, renderPos.y), 20, true);
             this.renderer.addText(renderable);
 
             this.removeActorFromWorld(item);
@@ -249,11 +249,11 @@ class Game {
                 let destination = AStarPathfinder.findNextNode(matrix, npc.position, this.hero.position);
 
                 if (a.position.equals(destination)) { // Attack hero
-                    a.inflictDamage(npc.damage);
+                    a.inflictDamage(npc.combatant.damage);
 
-                    this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.damage + ' damage.');
+                    this.hud.combatLog.push(npc.name + ' attacked you for for ' + npc.combatant.damage + ' damage.');
                     let renderPos = a.renderable.sprite.position;
-                    let renderable = new TextRenderable('-' + this.hero.damage, HudColor.Red, new Point(renderPos.x + 10, renderPos.y), 20, true);
+                    let renderable = new TextRenderable('-' + this.hero.combatant.damage, HudColor.Red, new Point(renderPos.x + 10, renderPos.y), 20, true);
                     this.renderer.addText(renderable);
 
                     if (a.isDead()) {
@@ -301,7 +301,7 @@ class Game {
         let visible: Actor[] = [];
 
         // Using a 3 cell annulus to make close vertical walls visible (test with range 10). May want to scale with a formula instead.
-        for (let annulusPoint of Geometry.pointsInAnnulus(a.position, a.visionRange, 3)) {
+        for (let annulusPoint of Geometry.pointsInAnnulus(a.position, a.vision.visionRange, 3)) {
             let line = Geometry.pointsInLine(a.position, annulusPoint);
 
             let obstructing = false;
@@ -313,7 +313,7 @@ class Game {
                 let actorsAtPoint = this.getAllLayerActorsAt(linePoint.x, linePoint.y);
 
                 for (let ap of actorsAtPoint) {
-                    if (ap.blocksVision) {
+                    if (ap.vision.blocksVision) {
                         obstructing = true;
                     }
 
@@ -338,7 +338,7 @@ class Game {
                 continue;
 
             // Set visible if they're not hidden under fog
-            a.renderable.sprite.visible = !a.hiddenUnderFog;
+            a.renderable.sprite.visible = !a.vision.hiddenUnderFog;
 
             // Set appropriate tint (fog, shroud)
             a.renderable.sprite.tint = a.revealed ? LightSourceTint.Fog : LightSourceTint.Shroud;
@@ -347,11 +347,11 @@ class Game {
         // Dynamic lighting (origin to annulus)
         // Using a 3 cell annulus to make close vertical walls light up better (test with range 10). May want to scale with a formula instead.
         for (let a of allActors) {
-            if (a.lightSourceRange <= 0) { // Actor doesn't provide any light.
+            if (a.vision.lightSourceRange <= 0) { // Actor doesn't provide any light.
                 continue;
             }
 
-            if (a.actorType != ActorType.Hero && !a.revealed && !a.lightSourceAlwaysVisible) { // Non-hero actor hasn't been revealed yet, and we don't want to always show it
+            if (a.actorType != ActorType.Hero && !a.revealed && !a.vision.lightSourceAlwaysVisible) { // Non-hero actor hasn't been revealed yet, and we don't want to always show it
                 continue;
             }
 
@@ -359,7 +359,7 @@ class Game {
 
             for (let vis of visible) {
                 let distance = Point.distance(a.position, vis.position);
-                let intensity = this.getLightSourceIntensity(distance, a.lightSourceRange);
+                let intensity = this.getLightSourceIntensity(distance, a.vision.lightSourceRange);
 
                 if (vis.renderable.sprite.tint < intensity) { // If lit from multiple light sources, use the strongest light intensity ("blending")
                     vis.renderable.sprite.tint = intensity;

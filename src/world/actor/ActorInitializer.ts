@@ -1,54 +1,57 @@
 class ActorInitializer {
     static NewHero(position: Point) : Actor {
-        let a = new Actor('Hero', position, true);
+        let a = new Actor('Hero', position);
         a.actorType = ActorType.Hero;
+        a.collision.blocksMovement = true;
 
-        a.inventory = new Inventory();
-
-        a.hitpoints = 25;
-        a.damage = 3;
-        a.visionRange = 10;
-        a.lightSourceRange = 10;
+        a.combatant.hitpoints = 25;
+        a.combatant.damage = 3;
+        a.vision.visionRange = 10;
+        a.vision.lightSourceRange = 10;
 
         return a;
     }
 
     static NewMonster(position: Point) : Actor {
-        let a = new Actor('Monster', position, true);
+        let a = new Actor('Monster', position);
         a.actorType = ActorType.Npc;
+        a.collision.blocksMovement = true;
 
-        a.hitpoints = 5;
-        a.damage = 2;
-        a.visionRange = 10;
-        a.hiddenUnderFog = true;
+        a.combatant.hitpoints = 5;
+        a.combatant.damage = 2;
+        a.vision.visionRange = 10;
+        a.vision.hiddenUnderFog = true;
 
         return a;
     }
 
     static NewWall(position: Point) : Actor {
-        let a = new Actor('Wall', position, true);
+        let a = new Actor('Wall', position);
         a.actorType = ActorType.Wall;
+        a.collision.blocksMovement = true;
 
-        a.blocksVision = true;
+        a.vision.blocksVision = true;
 
         return a;
     }
 
     static NewDoor(position: Point) : Actor {
-        let a = new Actor('Door', position, true);
+        let a = new Actor('Door', position);
         a.actorType = ActorType.Door;
+        a.collision.blocksMovement = true;
 
-        a.blocksVision = true;
+        a.vision.blocksVision = true;
 
         return a;
     }
 
     static NewTorch(position: Point) : Actor {
-        let a = new Actor('Torch', position, true);
+        let a = new Actor('Torch', position);
         a.actorType = ActorType.Wall;
+        a.collision.blocksMovement = true;
 
-        a.visionRange = 3; // TODO: Requiring this is bad.
-        a.lightSourceRange = 3;
+        a.vision.visionRange = 3; // TODO: Requiring this is bad.
+        a.vision.lightSourceRange = 3;
 
         return a;
     }
@@ -64,14 +67,15 @@ class ActorInitializer {
         let a = new Actor('Gold', position);
         a.actorType = ActorType.Item;
 
-        a.gold = 5;
+        a.gold.amount = 5;
 
         return a;
     }
 
     static NewChest(position: Point) : Actor {
-        let a = new Actor('Chest', position, true);
+        let a = new Actor('Chest', position);
         a.actorType = ActorType.Chest;
+        a.collision.blocksMovement = true;
 
         a.chestItem = new Item();
 
