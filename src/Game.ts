@@ -57,6 +57,12 @@ class Game {
             // console.log(event.key);
             this.hud.lastKeyPressed = event.key + ' (' + event.keyCode + ')';
 
+            event.preventDefault(); // stop browser scrolling
+
+            if (this.hero.isDead()) {
+                return;
+            }
+
             if (this.playerTurn) {
                 if (event.keyCode == KeyCode.i) {
                     this.characterUi.toggle(this.hero); // TODO: Potential race condition where this is null
@@ -82,8 +88,6 @@ class Game {
 
                 if (movement != null) {
                     this.doHeroMovement(movement);
-
-                    event.preventDefault(); // stop browser scrolling
                 }
             }
         });
@@ -259,8 +263,6 @@ class Game {
                     if (a.isDead()) {
                         this.hud.combatLog.push(npc.name + ' killed you!');
                         this.removeActorFromWorld(a);
-
-                        // TODO: Hero needs to die.
                     }
                 }
                 else { // Move
