@@ -1,7 +1,11 @@
 # rogue
 
 ## About
-Small game experiment with TypeScript + PixiJS.
+Small rogue-like game experiment with TypeScript + PixiJS.
+
+To try it out, build the source, or check out http://hamb.in/rogue/game.html.
+
+The project will not be updated in its current state.
 
 To build, install TypeScript 2.3.2+ and compile with `tsc`. To run, open `game.html`.
 
