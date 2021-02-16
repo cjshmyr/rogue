@@ -3,13 +3,15 @@
 ## About
 Small rogue-like game experiment with TypeScript + PixiJS.
 
-To try it out, build the source, or check out http://hamb.in/rogue/game.html.
+To try it out, build the source, or check out http://shmyr.net/rogue/game.html.
 
-The project will not be updated in its current state.
+![](demo.png)
+
+The project will not be updated in its current state. It contains many unfinished features, and several functional ones (lighting, A* pathfinding, etc).
 
 To build, install TypeScript 2.3.2+ and compile with `tsc`. To run, open `game.html`.
 
-If ran locally, depending on the browser's CORS restrictions (e.g. Chrome) you may need to host the page with a web server.
+If ran locally, depending on the browser's CORS restrictions (e.g. Chrome) you may need to host the page with a web server like Mongoose.
 
 ## 3rd party
 [PixiJS (v4.5.2)](http://www.pixijs.com/) - CDN referenced
