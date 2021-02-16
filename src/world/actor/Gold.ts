@@ -1,4 +1,4 @@
 class Gold {
     amount: number;
-    constructor() { }
+    constructor() { this.amount = 0; }
 }
