@@ -1,5 +1,15 @@
+import { ActorType } from "../../Enums";
+import { Point } from "../../Point";
+import { SpriteRenderable } from "../../render/SpriteRenderable";
+import { Collision } from "./Collision";
+import { Combatant } from "./Combatant";
+import { Gold } from "./Gold";
+import { Inventory } from "./Inventory";
+import { Item } from "./Item";
+import { Vision } from "./Vision";
+
 // TODO: Want to combine this stuff into various objects later, then do json->object loading
-class Actor {
+export class Actor {
     readonly name: string = 'undefined actor';
     position: Point;
     actorType: ActorType = ActorType.UndefinedActorType; // TODO: Make readonly?

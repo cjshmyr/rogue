@@ -1,4 +1,9 @@
-class Hud {
+import { HudColor } from "../Enums";
+import { Point } from "../Point";
+import { CellLayer } from "../world/CellLayer";
+import { Actor } from "../world/actor/Actor";
+
+export class Hud {
     private readonly combatHudStart: Point = new Point(16, 600);
     private readonly infoHudStart: Point = new Point(600, 16);
     combatHud: PIXI.Text;

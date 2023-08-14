@@ -1,4 +1,9 @@
-class ActorInitializer {
+import { ActorType } from "../../Enums";
+import { Point } from "../../Point";
+import { Actor } from "./Actor";
+import { Item } from "./Item";
+
+export class ActorInitializer {
     static NewHero(position: Point) : Actor {
         let a = new Actor('Hero', position);
         a.actorType = ActorType.Hero;

@@ -1,4 +1,6 @@
-class SpriteRenderable {
+import { TextureAtlas } from "./TextureAtlas";
+
+export class SpriteRenderable {
     readonly animationPrefix: string;
 
     sprite: PIXI.Sprite; // the current sprite.

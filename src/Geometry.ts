@@ -1,4 +1,6 @@
-class Geometry
+import { Point } from "./Point";
+
+export class Geometry
 {
     static pointsInBox(center: Point, range: number) : Point[] {
         let points: Point[] = [];

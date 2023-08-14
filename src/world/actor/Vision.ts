@@ -1,4 +1,4 @@
-class Vision {
+export class Vision {
     hiddenUnderFog: boolean = false; // Is this hidden under fog?
     visionRange: number = 0; // How far can this actor see? (Circle radius)
     lightSourceRange: number = 0; // How much light is given off? (Intensity purpose)

@@ -1,3 +1,5 @@
+import { Point } from "../Point";
+
 // A really stupid pathfinder. Eventually replace with A*.
 class SimplePathfinder {
     static getClosestCellBetweenPoints(start: Point, end: Point) : Point {

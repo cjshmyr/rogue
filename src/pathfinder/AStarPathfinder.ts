@@ -1,3 +1,5 @@
+import { Point } from "../Point";
+
 /*
 Doc:
     - Pass in a 2d array of coordinates, example:
@@ -26,7 +28,7 @@ class ANode {
     }
 }
 
-class AStarPathfinder {
+export class AStarPathfinder {
     static findNextNode(matrix: number[][], start: Point, end: Point) : Point {
         let path = this.findPath(matrix, start, end);
         return path.length == 1 ? path[0] : path[1];

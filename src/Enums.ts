@@ -1,9 +1,9 @@
 // TODO: A debug mode to change the HudColor.Background
-enum CanvasColor {
+export enum CanvasColor {
     Background = 0x000000 // Black. (used to be 0x606060 - Grey)
 }
 
-enum HudColor {
+export enum HudColor {
     Black = 0x000000,
     White = 0xffffff,
     Grey = 0x808080,
@@ -13,7 +13,7 @@ enum HudColor {
     Maroon = 0x800000
 }
 
-enum LightSourceTint {
+export enum LightSourceTint {
     Visible1 = 0xffffff, // None/White
     Visible2 = 0xf2f2f2, // 95%
     Visible3 = 0xe6e6e6, // 90%
@@ -24,7 +24,7 @@ enum LightSourceTint {
     Shroud = 0x000000 // Black -- TODO: Just don't render (.visible) instead.
 }
 
-enum ActorType {
+export enum ActorType {
     UndefinedActorType,
     Hero,
     Npc,
@@ -35,11 +35,11 @@ enum ActorType {
     Chest
 }
 
-enum HeroAction {
+export enum HeroAction {
     Wait
 }
 
-enum KeyCode {
+export enum KeyCode {
     LeftArrow = 37,
     UpArrow = 38,
     RightArrow = 39,

@@ -1,4 +1,4 @@
-class Random {
+export class Random {
     private static seed: number = 1;
     private static randomSeedStart: number = 100000;
     private static randomSeedEnd: number = 999999;

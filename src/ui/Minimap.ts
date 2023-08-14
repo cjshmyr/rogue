@@ -1,4 +1,8 @@
-class Minimap {
+import { ActorType, HudColor } from "../Enums";
+import { Point } from "../Point";
+import { CellLayer } from "../world/CellLayer";
+
+export class Minimap {
     private readonly topLeftStart: Point = new Point(600, 600);
     readonly graphics: PIXI.Graphics;
 

@@ -1,3 +1,17 @@
+import { ActorType, HudColor, KeyCode, LightSourceTint } from './Enums';
+import { Geometry } from './Geometry';
+import { Point } from './Point';
+import { AStarPathfinder } from './pathfinder/AStarPathfinder';
+import { Renderer } from './render/Render';
+import { TextRenderable } from './render/TextRenderable';
+import { TextureAtlas } from './render/TextureAtlas';
+import { CharacterUi } from './ui/CharacterUi';
+import { Hud } from './ui/Hud';
+import { Minimap } from './ui/Minimap';
+import { CellLayer } from './world/CellLayer';
+import { GameMap, MapGenerator } from './world/GameMap';
+import { Actor } from './world/actor/Actor';
+
 window.onload = () => {
     // Load art, start game
     PIXI.loader
@@ -14,7 +28,7 @@ class Game {
     renderer: Renderer;
 
     // HUD / Minimap
-    hud: Hud
+    hud: Hud;
     minimap: Minimap;
     characterUi: CharacterUi;
 
@@ -91,7 +105,7 @@ class Game {
         });
     }
 
-    private loadMap(map: Map) : void {
+    private loadMap(map: GameMap) : void {
         // Setup layers
         this.itemLayer = new CellLayer(map.width, map.height);
         this.floorLayer = new CellLayer(map.width, map.height);

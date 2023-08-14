@@ -1,4 +1,8 @@
-class Map {
+import { Point } from "../Point";
+import { Actor } from "./actor/Actor";
+import { ActorInitializer } from "./actor/ActorInitializer";
+
+export class GameMap {
     actors: Actor[];
     width: number;
     height: number;
@@ -7,9 +11,9 @@ class Map {
     }
 }
 
-class MapGenerator {
-    static generateTestMap() : Map {
-        let map: Map = new Map();
+export class MapGenerator {
+    static generateTestMap() : GameMap {
+        let map: GameMap = new GameMap();
 
         // Sample map
         let ascii = [

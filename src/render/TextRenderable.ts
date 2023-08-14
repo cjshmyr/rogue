@@ -1,5 +1,8 @@
+import { HudColor } from "../Enums";
+import { Point } from "../Point";
+
 // TODO: Might have reuse w/ sprites
-class TextRenderable {
+export class TextRenderable {
     text: PIXI.Text;
     private ticksRemaining: number;
 

@@ -1,4 +1,6 @@
-class Inventory {
+import { Item } from "./Item";
+
+export class Inventory {
     items: Item[] = [];
 
     constructor() {

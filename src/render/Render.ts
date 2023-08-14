@@ -1,4 +1,12 @@
-class Renderer {
+import { ActorType, CanvasColor } from "../Enums";
+import { Point } from "../Point";
+import { CharacterUi } from "../ui/CharacterUi";
+import { Hud } from "../ui/Hud";
+import { Minimap } from "../ui/Minimap";
+import { Actor } from "../world/actor/Actor";
+import { TextRenderable } from "./TextRenderable";
+
+export class Renderer {
     renderer: PIXI.CanvasRenderer | PIXI.WebGLRenderer;
     stage: PIXI.Container;
     floorContainer: PIXI.Container;

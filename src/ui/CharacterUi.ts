@@ -1,4 +1,8 @@
-class CharacterUi {
+import { HudColor } from "../Enums";
+import { Point } from "../Point";
+import { Actor } from "../world/actor/Actor";
+
+export class CharacterUi {
     private readonly windowStart: Point = new Point(200, 200);
     graphics: PIXI.Graphics;
     opened: boolean = false;

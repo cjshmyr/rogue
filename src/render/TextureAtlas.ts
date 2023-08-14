@@ -1,4 +1,4 @@
-class TextureAtlas {
+export class TextureAtlas {
     static atlas: PIXI.loaders.TextureDictionary;
 
     static init() : void {

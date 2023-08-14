@@ -1,4 +1,8 @@
-class CellLayer {
+import { Geometry } from "../Geometry";
+import { Point } from "../Point";
+import { Actor } from "./actor/Actor";
+
+export class CellLayer {
     private cells: Actor[][];
     cellCount: number;
     actorCount: number;
