@@ -49,8 +49,12 @@ bundleScripts = function() {
 
 gulp.task('scripts', bundleScripts);
 
-gulp.task('default', () => {
+gulp.task('default',
 	gulp.series(
 		gulp.parallel('scripts')
-	);
-});
+	)
+);
+
+/* Watching for updates */
+watchedBrowserify.on('update', bundleScripts);
+watchedBrowserify.on('log', fancy_log);
