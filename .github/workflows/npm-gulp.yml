@@ -2,7 +2,7 @@ name: NodeJS with Gulp
 
 on:
   push:
-    branches: [ "master", "gh-pages" ]
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
@@ -26,3 +26,26 @@ jobs:
       run: |
         npm install
         gulp build --noSourceMaps
+
+    # https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v2.0.0 #https://github.com/actions/upload-pages-artifact
+      with:
+        path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2 #https://github.com/actions/deploy-pages
