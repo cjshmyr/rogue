@@ -51,7 +51,19 @@ gulp.task('scripts', bundleScripts);
 
 gulp.task('default',
 	gulp.series(
-		gulp.parallel('scripts')
+		gulp.parallel('scripts'),
+	)
+);
+
+gulp.task('stop-watchify', function (done) {
+	watchedBrowserify.close();
+	done();
+});
+
+gulp.task('build',
+	gulp.series(
+		gulp.parallel('scripts'),
+		gulp.parallel('stop-watchify')
 	)
 );
 
