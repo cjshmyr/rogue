@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "es3",
-        "sourceMap": true,
-        "outFile": "./core/built/game.js"
+        "sourceMap": false,
+        "outFile": "./dist/game.js"
     }
 }
