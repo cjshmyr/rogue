@@ -7,9 +7,6 @@ const sourcemaps = require('gulp-sourcemaps');
 const buffer = require('vinyl-buffer');
 const watchify = require('watchify');
 const fancy_log = require('fancy-log');
-const tar = require('gulp-tar');
-const gzip = require('gulp-gzip');
-const rename = require('gulp-rename');
 const {rimraf} = require('rimraf');
 const yargs = require('yargs');
 
@@ -17,8 +14,6 @@ const argv = yargs.argv;
 const noSourceMaps = argv.noSourceMaps !== undefined;
 
 const destPath = './dist';
-
-const githubPagesPath = './dist-pages';
 
 const watchedBrowserify = watchify(
 	browserify({
@@ -81,24 +76,10 @@ gulp.task('stop-watchify', function (done) {
 	done();
 });
 
-gulp.task('github-pages-clean', () => {
-	return rimraf(githubPagesPath);
-})
-
-gulp.task('github-pages-gzip', () => {
-	return gulp.src(destPath + '/**')
-		.pipe(tar('site.tar'))
-		.pipe(gzip())
-		.pipe(rename('github-pages'))
-		.pipe(gulp.dest(githubPagesPath));
-})
-
 gulp.task('build',
 	gulp.series(
 		gulp.parallel('clean'),
 		gulp.parallel('html', 'scripts', 'assets'),
-		gulp.parallel('github-pages-clean'),
-		gulp.parallel('github-pages-gzip'),
 		gulp.parallel('stop-watchify')
 	)
 );
