@@ -87,7 +87,7 @@ gulp.task('github-pages-clean', () => {
 
 gulp.task('github-pages-gzip', () => {
 	return gulp.src(destPath + '/**')
-		.pipe(tar('github-pages.tar'))
+		.pipe(tar('site.tar'))
 		.pipe(gzip())
 		.pipe(rename('github-pages'))
 		.pipe(gulp.dest(githubPagesPath));
