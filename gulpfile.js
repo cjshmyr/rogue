@@ -17,10 +17,8 @@ const argv = yargs.argv;
 const noSourceMaps = argv.noSourceMaps !== undefined;
 
 const destPath = './dist';
-const destPathContent = destPath + '/**';
 
-const githubPagesTarFile = 'github-pages.tar';
-const githubPagesGzipFile = 'github-pages';
+const githubPagesPath = './dist-pages';
 
 const watchedBrowserify = watchify(
 	browserify({
@@ -83,24 +81,23 @@ gulp.task('stop-watchify', function (done) {
 	done();
 });
 
-gulp.task('github-pages-tar', () => {
-	return gulp.src(destPathContent)
-		.pipe(tar(githubPagesTarFile))
-		.pipe(gulp.dest(destPath))
-});
+gulp.task('github-pages-clean', () => {
+	return rimraf(githubPagesPath);
+})
 
 gulp.task('github-pages-gzip', () => {
-	return gulp.src(destPath + '/' + githubPagesTarFile)
+	return gulp.src(destPath + '/**')
+		.pipe(tar('github-pages.tar'))
 		.pipe(gzip())
 		.pipe(rename('github-pages'))
-		.pipe(gulp.dest(destPath))
-});
+		.pipe(gulp.dest(githubPagesPath));
+})
 
 gulp.task('build',
 	gulp.series(
 		gulp.parallel('clean'),
 		gulp.parallel('html', 'scripts', 'assets'),
-		gulp.parallel('github-pages-tar'),
+		gulp.parallel('github-pages-clean'),
 		gulp.parallel('github-pages-gzip'),
 		gulp.parallel('stop-watchify')
 	)
