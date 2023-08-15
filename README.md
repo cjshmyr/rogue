@@ -1,17 +1,20 @@
 # rogue
 
 ## About
-Small rogue-like game experiment with TypeScript + PixiJS.
+Small rogue-like game experiment.
 
-To try it out, build the source, or check out http://shmyr.net/rogue/game.html.
+This was a sandbox to teach myself TypeScript and PixiJS, and to epxeriment with GitHub Actions for GitHub Pages deployments.
+
+The project will not receive any major updates. It contains many unfinished features, but several functional ones (A* pathfinding, lighting).
+
+To try it out: https://cjshmyr.github.io/rogue/
 
 ![](demo.png)
 
-The project will not be updated in its current state. It contains many unfinished features, and several functional ones (lighting, A* pathfinding, etc).
+## Compiling
+To build, install `npm` & `Gulp`, then run `npm i` and `gulp`.
 
-To build, install TypeScript 2.3.2+ and compile with `tsc`. To run, open `game.html`.
-
-If ran locally, depending on the browser's CORS restrictions (e.g. Chrome) you may need to host the page with a web server like Mongoose.
+To run, open `dist/index.html` with a live server (an extension is automatically recommended for Visual Studio Code workspaces).
 
 ## 3rd party
 [PixiJS (v4.5.2)](http://www.pixijs.com/) - CDN referenced
