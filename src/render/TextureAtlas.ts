@@ -2,7 +2,7 @@ export class TextureAtlas {
     static atlas: PIXI.loaders.TextureDictionary;
 
     static init() : void {
-        this.atlas = PIXI.loader.resources['core/art/sprites.json'].textures;
+        this.atlas = PIXI.loader.resources['assets/sprites.json'].textures;
     }
 
     static getSpriteTexture(animationName: string) : PIXI.Texture {

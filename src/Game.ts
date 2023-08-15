@@ -15,7 +15,7 @@ import { Actor } from './world/actor/Actor';
 window.onload = () => {
     // Load art, start game
     PIXI.loader
-        .add('core/art/sprites.json')
+        .add('assets/sprites.json')
         .load(() => {
             // Important we put any static reusable bits here
             TextureAtlas.init();

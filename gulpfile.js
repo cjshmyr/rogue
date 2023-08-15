@@ -66,9 +66,15 @@ gulp.task('html', () => {
 
 gulp.task('scripts', bundleScripts);
 
+gulp.task('assets', () => {
+	return gulp.src(['src/assets/**'])
+		.pipe(gulp.dest(destPath + '/assets'));
+})
+
 gulp.task('default',
 	gulp.series(
-		gulp.parallel('html', 'scripts'),
+		gulp.parallel('clean'),
+		gulp.parallel('html', 'scripts', 'assets')
 	)
 );
 
@@ -93,7 +99,7 @@ gulp.task('github-pages-gzip', () => {
 gulp.task('build',
 	gulp.series(
 		gulp.parallel('clean'),
-		gulp.parallel('html', 'scripts'),
+		gulp.parallel('html', 'scripts', 'assets'),
 		gulp.parallel('github-pages-tar'),
 		gulp.parallel('github-pages-gzip'),
 		gulp.parallel('stop-watchify')
